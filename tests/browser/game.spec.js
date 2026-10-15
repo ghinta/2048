@@ -81,7 +81,7 @@ test("restart confirmation can be cancelled and preserves the best score", async
 test("winning at 2048 opens the win state and continuing resumes play", async ({ page }) => {
   await openGame(page, { ...initial, board: row([1024, 1024, 0, 0]) });
   await page.keyboard.press("ArrowLeft");
-  await expect(page.getByRole("heading", { name: "Das ist deine 2048." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "2048 erreicht" })).toBeVisible();
   await expect(page.locator("#score")).toHaveText("2.048");
   await page.getByRole("button", { name: "Weiterspielen", exact: true }).click();
   await expect(page.locator("#game-overlay")).toBeHidden();
@@ -95,7 +95,7 @@ test("a blocked board shows game over; undo returns to the playable position", a
   const board = [2, 4, 2, 4, 4, 2, 4, 2, 2, 4, 2, 4, 0, 4, 8, 16];
   await openGame(page, { ...initial, board, moves: 12, score: 180 });
   await page.keyboard.press("ArrowLeft");
-  await expect(page.getByRole("heading", { name: "Ein guter Lauf." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Spiel beendet" })).toBeVisible();
   await page.getByRole("button", { name: "Letzten Zug zurück", exact: true }).click();
   await expect(page.locator("#game-overlay")).toBeHidden();
   expect((await saved(page)).board).toEqual(board);
@@ -105,7 +105,7 @@ test("a blocked board shows game over; undo returns to the playable position", a
 test("help is keyboard accessible and pauses game input", async ({ page }) => {
   await openGame(page);
   await page.getByRole("button", { name: "So geht’s" }).click();
-  await expect(page.getByRole("dialog", { name: "Ein Zug nach dem anderen." })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Spielanleitung" })).toBeVisible();
   await page.keyboard.press("ArrowLeft");
   expect((await saved(page)).board).toEqual(initial.board);
   await page.keyboard.press("Escape");

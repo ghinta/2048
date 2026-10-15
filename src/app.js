@@ -106,10 +106,6 @@ function updateScores() {
   }
   $("#move-count").textContent = `${numberFormat.format(state.moves)} ${state.moves === 1 ? "Zug" : "Züge"}`;
   undoButton.disabled = !previous || busy;
-  $("#game-caption").textContent = state.moves === 0 ? "Alles beginnt mit einer 2."
-    : hasWon(state.board) ? "Alles Weitere ist Zugabe."
-    : Math.max(...state.board) >= 128 ? "Dein Flow. Dein nächster Meilenstein."
-    : "Ein guter Zug nach dem anderen.";
 }
 
 function syncOverlay() {
@@ -120,13 +116,12 @@ function syncOverlay() {
   boardElement.setAttribute("aria-disabled", String(Boolean(kind)));
   if (!kind) return;
   const won = kind === "won";
-  $("#overlay-symbol").textContent = won ? "✦" : "↗";
-  $("#overlay-title").textContent = won ? "Das ist deine 2048." : "Ein guter Lauf.";
+  $("#overlay-title").textContent = won ? "2048 erreicht" : "Spiel beendet";
   $("#overlay-description").textContent = won
-    ? "Ein großer Moment für eine kleine Pause. Bereit für die nächste Zahl?"
-    : `${numberFormat.format(state.score)} Punkte. Jede Runde ist ein neuer Anfang.`;
+    ? "Du kannst weiterspielen oder ein neues Spiel starten."
+    : `${numberFormat.format(state.score)} Punkte. Keine weiteren Züge möglich.`;
   const primary = $("#overlay-primary");
-  primary.replaceChildren(document.createTextNode(won ? "Weiterspielen" : "Noch eine Runde"));
+  primary.replaceChildren(document.createTextNode(won ? "Weiterspielen" : "Neues Spiel"));
   const secondary = $("#overlay-secondary");
   secondary.textContent = won ? "Neues Spiel" : "Letzten Zug zurück";
   secondary.hidden = !won && !previous;

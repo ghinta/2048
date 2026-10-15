@@ -1,9 +1,7 @@
-# 2048 — Glass Edition
+# 2048
 
-A small pause, reimagined in glass. A responsive, German-language take on 2048,
-with translucent surfaces, soft light, and a light/dark appearance inspired by
-Apple's Liquid Glass design language. Independently implemented with vanilla
-HTML, CSS and JavaScript; no runtime dependencies, accounts or analytics.
+A German-language 2048 game with a Liquid Glass interface and light/dark themes.
+Implemented with HTML, CSS and JavaScript; no runtime dependencies.
 
 **Play:** https://ghinta.github.io/2048/
 
