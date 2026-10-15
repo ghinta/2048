@@ -46,6 +46,8 @@ CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e
 Browser tests cover keyboard and touch input, merging, undo, persistence,
 restart confirmation, win/continue, game over, dialogs, reduced motion,
 unavailable storage, accessible cell labels, and layouts from 320 to 1440 px.
+The game fits the available viewport height without page scrolling, including
+small portrait screens and phone landscape layouts.
 Playwright runs a temporary HTTP server on port **4174** and stops it afterwards.
 
 ## GitHub Pages
@@ -58,6 +60,8 @@ uploads only the built **`dist/`** directory. Deployment runs only after these
 checks pass, using GitHub's official Pages actions and the `github-pages`
 environment. No custom secrets are required; only the deployment job receives
 Pages write and OIDC permissions.
+The build versions CSS and JavaScript URLs by content so reloading after a
+deployment loads matching assets instead of cached files from an older release.
 
 To configure a new repository, choose **Settings → Pages → Source → GitHub Actions**.
 This setting is already configured for `ghinta/2048`. Publishing setup requires

@@ -115,7 +115,7 @@ test("help is keyboard accessible and pauses game input", async ({ page }) => {
   await expect(page.locator("#score")).toHaveText("4");
 });
 
-test("mobile touch swipes work and the layout fits narrow screens", async ({ browser, baseURL }) => {
+test("mobile touch works and the game fits without scrolling in either orientation", async ({ browser, baseURL }) => {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
   const page = await context.newPage();
   await openGame(page);
@@ -128,12 +128,19 @@ test("mobile touch swipes work and the layout fits narrow screens", async ({ bro
   await session.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: left, y }] });
   await session.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
   await expect(page.locator("#score")).toHaveText("4");
-  for (const width of [320, 375, 390, 768]) {
-    await page.setViewportSize({ width, height: 844 });
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  for (const [width, height] of [[320, 480], [375, 548], [390, 600], [390, 844], [430, 600], [768, 1024], [844, 390], [667, 375], [568, 320]]) {
+    await page.setViewportSize({ width, height });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight)).toBe(true);
     const bounds = await page.locator("#board").boundingBox();
     expect(Math.abs(bounds.width - bounds.height)).toBeLessThan(1);
     expect(bounds.x).toBeGreaterThanOrEqual(0);
+    expect(bounds.width).toBeGreaterThanOrEqual(200);
+    const controls = await page.locator(".game-controls").boundingBox();
+    expect(controls.y).toBeGreaterThanOrEqual(0);
+    expect(controls.y + controls.height).toBeLessThanOrEqual(height);
+    // Focus and swipes must not move the viewport to reveal the game.
+    await page.locator("#board").focus();
+    expect(await page.evaluate(() => scrollY)).toBe(0);
   }
   await context.close();
 });
@@ -180,9 +187,10 @@ test("desktop glass surfaces and every tile value render without overflow", asyn
   await openGame(page, { ...initial, board, continued: true });
   await expect(page.locator(".tile")).toHaveCount(16);
   await expect(page.locator(".game-card")).toHaveCSS("backdrop-filter", /blur/);
-  for (const width of [1440, 1024, 820, 390, 320]) {
-    await page.setViewportSize({ width, height: 1000 });
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  for (const [width, height] of [[1440, 1000], [1024, 600], [820, 600], [390, 600], [320, 480], [568, 320]]) {
+    await page.setViewportSize({ width, height });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight)).toBe(true);
+    expect(await page.locator(".tile-face").evaluateAll((tiles) => tiles.every((tile) => tile.scrollWidth <= tile.clientWidth))).toBe(true);
   }
   await page.locator("#theme-button").click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
