@@ -53,14 +53,18 @@ Playwright runs a temporary HTTP server on port **4174** and stops it afterwards
 ## GitHub Pages
 
 This is a static site with relative asset URLs, so it works under `/2048/`.
-GitHub Pages serves the **`main` branch, `/` (root)**. `.nojekyll` prevents Jekyll
-processing. Pushes to `main` trigger GitHub's Pages deployment. No build secrets
-or external services are required. `dist/` is an optional export for other hosts;
-GitHub Pages serves the equivalent files directly from the repository root.
+The [Pages workflow](.github/workflows/pages.yml) runs on pushes to **`main`**
+and can also be started manually from the Actions tab. It installs the locked
+dependencies and Chromium, runs all 12 game-logic and 12 browser tests, and
+uploads only the built **`dist/`** directory. Deployment runs only after these
+checks pass, using GitHub's official Pages actions and the `github-pages`
+environment. No custom secrets are required; only the deployment job receives
+Pages write and OIDC permissions.
 
-To configure a new repository, choose **Settings → Pages → Deploy from a branch**,
-then select **main** and **/(root)**. Publishing requires repository administration
-permission; running the game does not.
+To configure a new repository, choose **Settings → Pages → Source → GitHub Actions**.
+This setting is already configured for `ghinta/2048`. Publishing setup requires
+repository administration permission; running the game does not. `.nojekyll`
+is included in the export, and the site requires no server-side processing.
 
 ## Files
 
