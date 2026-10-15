@@ -132,9 +132,11 @@ test("mobile touch works and the game fits without scrolling in either orientati
     await page.setViewportSize({ width, height });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight)).toBe(true);
     const bounds = await page.locator("#board").boundingBox();
-    expect(Math.abs(bounds.width - bounds.height)).toBeLessThan(1);
+    expect(bounds.height).toBeGreaterThanOrEqual(200);
     expect(bounds.x).toBeGreaterThanOrEqual(0);
     expect(bounds.width).toBeGreaterThanOrEqual(200);
+    const section = await page.locator(".game-section").boundingBox();
+    expect(section.height).toBeGreaterThan(height * .72);
     const controls = await page.locator(".game-controls").boundingBox();
     expect(controls.y).toBeGreaterThanOrEqual(0);
     expect(controls.y + controls.height).toBeLessThanOrEqual(height);
@@ -173,11 +175,16 @@ test("unavailable storage does not prevent a game from starting", async ({ page 
 });
 
 test("invalid saved data is safely replaced with a new game", async ({ page }) => {
-  await page.addInitScript(() => { localStorage.setItem("2048-glass-game", '{"version":1,"board":[3],"score":-1}'); });
+  await page.addInitScript(() => {
+    localStorage.setItem("2048-glass-game", '{"version":1,"board":[3],"score":-1}');
+    localStorage.setItem("2048-glass-appearance", '{"version":1,"glassLevel":"invalid","fillScreen":"no","reduceTransparency":{}}');
+  });
   await page.goto("./");
   await expect(page.locator(".tile")).toHaveCount(2);
   await expect(page.locator("#score")).toHaveText("0");
   expect((await saved(page)).board).toHaveLength(16);
+  await expect(page.locator("html")).toHaveAttribute("data-layout", "fill");
+  await expect(page.locator("#glass-level")).toHaveValue("35");
 });
 
 test("desktop glass surfaces and every tile value render without overflow", async ({ page }) => {
@@ -195,4 +202,96 @@ test("desktop glass surfaces and every tile value render without overflow", asyn
   await page.locator("#theme-button").click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   expect(errors).toEqual([]);
+});
+
+test("glass slider changes the rendered material while settings pause the game", async ({ page }) => {
+  await openGame(page);
+  const before = await saved(page);
+  await page.getByRole("button", { name: "Darstellung öffnen" }).click();
+  await expect(page.locator("#settings-dialog")).toHaveCSS("opacity", "1");
+  const slider = page.getByRole("slider", { name: "Liquid Glass" });
+  await slider.focus();
+  await slider.press("Home");
+  await expect(slider).toHaveValue("0");
+  const clear = await page.locator(".preview-toolbar").evaluate((element) => ({ blur: getComputedStyle(element).backdropFilter, color: getComputedStyle(element).backgroundColor }));
+  await slider.press("End");
+  await expect(slider).toHaveValue("100");
+  await expect(page.locator("#glass-value")).toHaveText("100 %");
+  const tinted = await page.locator(".preview-toolbar").evaluate((element) => ({ blur: getComputedStyle(element).backdropFilter, color: getComputedStyle(element).backgroundColor }));
+  expect(tinted.blur).not.toEqual(clear.blur);
+  expect(tinted.color).not.toEqual(clear.color);
+  await slider.press("ArrowLeft");
+  await expect(slider).toHaveAttribute("aria-valuetext", "99 % eingefärbt");
+  await page.keyboard.press("z");
+  expect(await saved(page)).toEqual(before);
+  for (const [width, height] of [[390, 844], [320, 480]]) {
+    await page.setViewportSize({ width, height });
+    const dialog = await page.locator("#settings-dialog").boundingBox();
+    expect(dialog.y).toBeGreaterThanOrEqual(0);
+    expect(dialog.y + dialog.height).toBeLessThanOrEqual(height);
+  }
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#settings-button")).toBeFocused();
+  await page.keyboard.press("ArrowLeft");
+  await expect(page.locator("#score")).toHaveText("4");
+});
+
+test("appearance preferences persist, reduced transparency works and reset keeps the game", async ({ browser, baseURL }) => {
+  const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  await page.goto(baseURL);
+  await page.evaluate((game) => {
+    localStorage.setItem("2048-glass-game", JSON.stringify(game));
+    localStorage.setItem("2048-glass-best", "8192");
+    localStorage.setItem("2048-glass-theme", "light");
+    localStorage.removeItem("2048-glass-appearance");
+  }, initial);
+  await page.reload();
+  const before = await saved(page);
+  await page.getByRole("button", { name: "Darstellung öffnen" }).click();
+  await page.getByRole("slider", { name: "Liquid Glass" }).press("End");
+  await page.getByRole("switch", { name: "Bildschirm ausfüllen" }).uncheck();
+  await page.getByRole("switch", { name: "Transparenz reduzieren" }).check();
+  await page.getByRole("radio", { name: "Dunkel", exact: true }).check();
+  await page.getByRole("button", { name: "Darstellung schließen" }).click();
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await expect(page.locator("html")).toHaveAttribute("data-layout", "square");
+  await expect(page.locator(".game-card")).toHaveCSS("backdrop-filter", "none");
+  const square = await page.locator("#board").boundingBox();
+  expect(Math.abs(square.width - square.height)).toBeLessThan(1);
+  expect(await saved(page)).toEqual(before);
+  await expect(page.locator("#best")).toHaveText("8.192");
+  await page.getByRole("button", { name: "Darstellung öffnen" }).click();
+  await expect(page.getByRole("slider", { name: "Liquid Glass" })).toHaveValue("100");
+  await expect(page.getByRole("slider", { name: "Liquid Glass" })).toBeDisabled();
+  await expect(page.getByRole("radio", { name: "Dunkel", exact: true })).toBeChecked();
+  await page.getByRole("button", { name: "Darstellung zurücksetzen" }).click();
+  await expect(page.getByRole("slider", { name: "Liquid Glass" })).toHaveValue("35");
+  await expect(page.getByRole("slider", { name: "Liquid Glass" })).toBeEnabled();
+  await expect(page.getByRole("switch", { name: "Bildschirm ausfüllen" })).toBeChecked();
+  await expect(page.getByRole("radio", { name: "System", exact: true })).toBeChecked();
+  await page.getByRole("button", { name: "Darstellung schließen" }).click();
+  const filled = await page.locator("#board").boundingBox();
+  expect(filled.height).toBeGreaterThan(square.height);
+  expect(await saved(page)).toEqual(before);
+  await expect(page.locator("#best")).toHaveText("8.192");
+  await page.close();
+});
+
+test("system appearance follows the device and explicit appearance overrides it", async ({ page }) => {
+  await openGame(page);
+  await page.getByRole("button", { name: "Darstellung öffnen" }).click();
+  await page.getByRole("radio", { name: "System", exact: true }).check();
+  await page.emulateMedia({ colorScheme: "dark" });
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await page.emulateMedia({ colorScheme: "light" });
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await page.getByRole("radio", { name: "Dunkel", exact: true }).check();
+  await page.emulateMedia({ colorScheme: "light" });
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await page.getByRole("button", { name: "Darstellung schließen" }).click();
+  await page.getByRole("button", { name: "Helle Darstellung aktivieren" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await page.getByRole("button", { name: "Darstellung öffnen" }).click();
+  await expect(page.getByRole("radio", { name: "Hell", exact: true })).toBeChecked();
 });

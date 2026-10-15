@@ -14,6 +14,10 @@ Implemented with HTML, CSS and JavaScript; no runtime dependencies.
   during the current browser session; the best score is kept.
 - Your game, best score and appearance are saved locally in your browser.
   The game also works if browser storage is unavailable.
+- Open the gear button for **Darstellung**: adjust Liquid Glass continuously
+  from transparent to tinted, choose System/Light/Dark, switch between a filled
+  and square board, or reduce transparency. Changes preview immediately and
+  persist without changing the current game.
 
 ## Local development
 
@@ -34,7 +38,7 @@ to play or edit the game. Changes to HTML, CSS and modules appear after a refres
 npm test                  # 12 game-logic tests, including seeded full games
 npm run build             # export just the application to dist/
 npx playwright install chromium
-npm run test:e2e           # build and run 12 browser tests against dist/
+npm run test:e2e           # build and run 15 browser tests against dist/
 ```
 
 If Chromium is already installed, skip the browser download and use:
@@ -47,7 +51,9 @@ Browser tests cover keyboard and touch input, merging, undo, persistence,
 restart confirmation, win/continue, game over, dialogs, reduced motion,
 unavailable storage, accessible cell labels, and layouts from 320 to 1440 px.
 The game fits the available viewport height without page scrolling, including
-small portrait screens and phone landscape layouts.
+small portrait screens and phone landscape layouts. Tests also cover the glass
+slider, paused input in settings, persisted appearance, reduced transparency,
+appearance reset, square/filled layouts, and following the system color scheme.
 Playwright runs a temporary HTTP server on port **4174** and stops it afterwards.
 
 ## GitHub Pages
@@ -55,7 +61,7 @@ Playwright runs a temporary HTTP server on port **4174** and stops it afterwards
 This is a static site with relative asset URLs, so it works under `/2048/`.
 The [Pages workflow](.github/workflows/pages.yml) runs on pushes to **`main`**
 and can also be started manually from the Actions tab. It installs the locked
-dependencies and Chromium, runs all 12 game-logic and 12 browser tests, and
+dependencies and Chromium, runs all 12 game-logic and 15 browser tests, and
 uploads only the built **`dist/`** directory. Deployment runs only after these
 checks pass, using GitHub's official Pages actions and the `github-pages`
 environment. No custom secrets are required; only the deployment job receives
@@ -67,6 +73,15 @@ To configure a new repository, choose **Settings → Pages → Source → GitHub
 This setting is already configured for `ghinta/2048`. Publishing setup requires
 repository administration permission; running the game does not. `.nojekyll`
 is included in the export, and the site requires no server-side processing.
+
+## Design references
+
+The interface follows Apple's guidance on [materials](https://developer.apple.com/design/human-interface-guidelines/materials)
+and [adopting Liquid Glass](https://developer.apple.com/documentation/technologyoverviews/adopting-liquid-glass):
+glass is concentrated in controls, with rounded shapes, subtle edge reflections,
+adaptive tint, and accessible contrast. The board uses a quieter content material
+to keep numbers legible. This web implementation uses CSS backdrop filters and
+layered highlights; it does not use Apple's native SwiftUI/UIKit renderer.
 
 ## Files
 

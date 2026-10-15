@@ -11,7 +11,12 @@ const undoButton = $("#undo-button");
 const overlay = $("#game-overlay");
 const helpDialog = $("#help-dialog");
 const restartDialog = $("#restart-dialog");
+const settingsDialog = $("#settings-dialog");
+const dialogs = [helpDialog, restartDialog, settingsDialog];
+const dialogOpen = () => dialogs.some((dialog) => dialog.open);
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+const systemTheme = matchMedia("(prefers-color-scheme: dark)");
+const defaultAppearance = () => ({ glassLevel: 35, fillScreen: true, reduceTransparency: matchMedia("(prefers-reduced-transparency: reduce)").matches });
 const numberFormat = new Intl.NumberFormat("de-DE");
 
 let storageWarningShown = false;
@@ -22,6 +27,8 @@ let queuedDirection = null;
 let overlayKind = null;
 let best = 0;
 let state;
+let appearance = defaultAppearance();
+let themePreference = "system";
 
 function notify(message) {
   const toast = $("#toast");
@@ -44,6 +51,16 @@ try {
   if (raw) {
     try { state = readSavedGame(JSON.parse(raw)); } catch { /* An invalid save starts a fresh round. */ }
   }
+  const savedTheme = localStorage.getItem("2048-glass-theme");
+  if (["light", "dark", "system"].includes(savedTheme)) themePreference = savedTheme;
+  try {
+    const savedAppearance = JSON.parse(localStorage.getItem("2048-glass-appearance"));
+    if (savedAppearance?.version === 1) {
+      if (typeof savedAppearance.glassLevel === "number" && Number.isFinite(savedAppearance.glassLevel)) appearance.glassLevel = Math.round(Math.max(0, Math.min(100, savedAppearance.glassLevel)));
+      if (typeof savedAppearance.fillScreen === "boolean") appearance.fillScreen = savedAppearance.fillScreen;
+      if (typeof savedAppearance.reduceTransparency === "boolean") appearance.reduceTransparency = savedAppearance.reduceTransparency;
+    }
+  } catch { /* Invalid appearance data uses defaults without affecting the game. */ }
 } catch { storageWarning(); }
 
 state ??= { board: newBoard(), score: 0, moves: 0, continued: false };
@@ -133,7 +150,7 @@ function announce(message) {
 }
 
 async function move(direction) {
-  if (helpDialog.open || restartDialog.open || overlayKind) return;
+  if (dialogOpen() || overlayKind) return;
   if (busy) {
     queuedDirection = direction;
     return;
@@ -179,7 +196,7 @@ async function move(direction) {
 }
 
 function undo() {
-  if (!previous || busy || helpDialog.open || restartDialog.open) return;
+  if (!previous || busy || dialogOpen()) return;
   state = previous;
   previous = null;
   queuedDirection = null;
@@ -216,7 +233,7 @@ const directions = {
   a: "left", d: "right", w: "up", s: "down",
 };
 document.addEventListener("keydown", (event) => {
-  if (event.ctrlKey || event.metaKey || event.altKey || helpDialog.open || restartDialog.open
+  if (event.ctrlKey || event.metaKey || event.altKey || dialogOpen()
     || event.target.matches("input, textarea, select, [contenteditable='true']")) return;
   const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
   if (directions[key] && !overlayKind) {
@@ -250,8 +267,9 @@ undoButton.addEventListener("click", undo);
 document.querySelectorAll("[data-new-game]").forEach((button) => button.addEventListener("click", requestNewGame));
 $("#confirm-restart").addEventListener("click", startNewGame);
 $("#help-button").addEventListener("click", () => helpDialog.showModal());
+$("#settings-button").addEventListener("click", () => settingsDialog.showModal());
 document.querySelectorAll("[data-close-dialog]").forEach((button) => button.addEventListener("click", () => button.closest("dialog").close()));
-for (const dialog of [helpDialog, restartDialog]) {
+for (const dialog of dialogs) {
   dialog.addEventListener("click", (event) => {
     if (event.target !== dialog) return;
     const bounds = dialog.getBoundingClientRect();
@@ -276,16 +294,66 @@ function updateThemeButton() {
   const dark = document.documentElement.dataset.theme === "dark";
   $("#theme-button").setAttribute("aria-label", dark ? "Helle Darstellung aktivieren" : "Dunkle Darstellung aktivieren");
   $("#theme-icon").setAttribute("href", dark ? "#icon-sun" : "#icon-moon");
-  $("meta[name='theme-color']").setAttribute("content", dark ? "#141c2d" : "#edf0f7");
+  $("meta[name='theme-color']").setAttribute("content", dark ? "#0c101a" : "#edf0f7");
 }
-$("#theme-button").addEventListener("click", () => {
-  document.documentElement.dataset.theme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+
+function setTheme(preference, persist = false) {
+  themePreference = preference;
+  document.documentElement.dataset.theme = preference === "system" ? (systemTheme.matches ? "dark" : "light") : preference;
+  document.querySelectorAll("[name='appearance-theme']").forEach((input) => { input.checked = input.value === preference; });
   updateThemeButton();
-  try { localStorage.setItem("2048-glass-theme", document.documentElement.dataset.theme); } catch { storageWarning(); }
+  if (persist) {
+    try { localStorage.setItem("2048-glass-theme", preference); } catch { storageWarning(); }
+  }
+}
+
+function applyAppearance() {
+  const level = appearance.glassLevel;
+  document.documentElement.style.setProperty("--glass-level", level / 100);
+  document.documentElement.dataset.layout = appearance.fillScreen ? "fill" : "square";
+  document.documentElement.dataset.reduceTransparency = String(appearance.reduceTransparency);
+  const slider = $("#glass-level");
+  slider.value = level;
+  slider.disabled = appearance.reduceTransparency;
+  slider.setAttribute("aria-valuetext", `${level} % eingefärbt`);
+  slider.style.setProperty("--range-progress", `${level}%`);
+  $("#glass-value").textContent = `${level} %`;
+  $("#fill-screen").checked = appearance.fillScreen;
+  $("#reduce-transparency").checked = appearance.reduceTransparency;
+}
+
+function saveAppearance() {
+  try { localStorage.setItem("2048-glass-appearance", JSON.stringify({ version: 1, ...appearance })); } catch { storageWarning(); }
+}
+
+$("#glass-level").addEventListener("input", (event) => {
+  appearance.glassLevel = Number(event.target.value);
+  applyAppearance();
+  saveAppearance();
 });
+$("#fill-screen").addEventListener("change", (event) => {
+  appearance.fillScreen = event.target.checked;
+  applyAppearance();
+  saveAppearance();
+});
+$("#reduce-transparency").addEventListener("change", (event) => {
+  appearance.reduceTransparency = event.target.checked;
+  applyAppearance();
+  saveAppearance();
+});
+document.querySelectorAll("[name='appearance-theme']").forEach((input) => input.addEventListener("change", () => setTheme(input.value, true)));
+$("#reset-appearance").addEventListener("click", () => {
+  appearance = defaultAppearance();
+  applyAppearance();
+  saveAppearance();
+  setTheme("system", true);
+});
+$("#theme-button").addEventListener("click", () => setTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark", true));
+systemTheme.addEventListener("change", () => { if (themePreference === "system") setTheme("system"); });
 
 renderTiles();
 updateScores();
-updateThemeButton();
+applyAppearance();
+setTheme(themePreference);
 save();
 syncOverlay();
