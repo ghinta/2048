@@ -23,6 +23,9 @@ Implemented with HTML, CSS and JavaScript; no runtime dependencies.
   Google / Material 3 and Microsoft / Fluent, or use **Automatisch**.
   Glass controls appear for Liquid Glass; reduced transparency is also available
   for Fluent. Resetting appearance restores automatic style selection.
+- Use **App installieren** in the header (the install icon on small displays).
+  Chrome and Edge open their native install dialog when available. Other cases
+  show browser-specific instructions. The button is hidden in installed app windows.
 
 ## Local development
 
@@ -44,15 +47,44 @@ If you do not use nvm, install the Node.js version in `.nvmrc` directly.
 The development server listens on port **4173**. There is no build step needed
 to play or edit the game. Changes to HTML, CSS and modules appear after a refresh.
 
-## Home-screen icon
+## App installation and offline use
 
-Apple touch icons (180 px), Android icons (192/512 px), a maskable icon and the
-favicon use the same four-number 2048 artwork. `assets/icon-source.png` is the
-opaque master; run `npm run icons` with Playwright Chromium (or `CHROMIUM_PATH`)
-to regenerate the PNG exports. The master is excluded from the published build.
-Icon and manifest URLs are versioned by content so browsers fetch updated images.
-Previously saved home-screen shortcuts may keep the OS-cached icon; remove the
-shortcut and add it again after reloading the updated page.
+The app includes a Web App Manifest with relative app ID, start URL and scope,
+PNG icons for installation, a maskable Android icon, and an Apple touch icon.
+All URLs work under GitHub Pages' `/2048/` prefix as well as at a domain root.
+Installation requires HTTPS (or localhost for development). The browser controls
+whether it offers a native install prompt; the page only requests it following
+a click. Dismissed prompts are not reused or shown automatically.
+
+Safari on iPhone/iPad uses **Teilen → Zum Home-Bildschirm → Hinzufügen**.
+Safari on supported macOS versions uses **Ablage → Zum Dock hinzufügen**.
+Chrome/Edge and Android receive matching browser-menu instructions when the
+native prompt is not available. Browser and OS policies may disable installation.
+
+Exported builds register a service worker and cache the complete, versioned app
+shell after the first successful online visit. The game can then reload offline;
+game data remains in the existing local browser storage. Cache activation removes
+only this app's obsolete caches for the same URL scope. Updates wait for existing
+app windows/tabs to close before replacing their cached version. Online navigation
+checks the network for the latest release. Storage policies or eviction can disable
+offline availability without preventing online play.
+
+Source development skips worker registration so edits are not hidden by caching.
+To check offline behavior, serve the export instead:
+
+```sh
+npm run build
+python3 -m http.server 4173 --directory dist
+```
+
+PNG icons are checked in. Regenerate them from the opaque master
+`assets/icon-source.png` with `npm run icons` (requires Playwright's Chromium,
+or `CHROMIUM_PATH`). The master is excluded from exported builds.
+
+The artwork shows four tiles spelling 2048. Apple and Android receive explicit
+PNG icons at their required sizes; the build versions icon and manifest URLs.
+Existing home-screen shortcuts can retain their old icon. After an update, remove
+the old shortcut and add the page again; there is no need to clear browser storage.
 
 ## Adaptive platform UI
 
@@ -145,7 +177,7 @@ PLAYWRIGHT_ENGINES=chromium,webkit npm run test:e2e
 ```
 
 The default run uses Chromium for the complete suite. The optional WebKit project
-runs the platform suite; Chromium also tests native touch input through CDP and
+runs the platform and installation suites; Chromium also tests native touch input through CDP and
 forced-colors emulation. Cross-engine swipe checks dispatch Pointer Events;
 keyboard and touch taps use Playwright's input APIs. CI runs both engines.
 
@@ -173,6 +205,11 @@ storage, both color schemes and all tile values on phone and desktop layouts.
 Additional checks keep appearance correct before the game module loads, verify
 system dark mode with blocked storage, and exercise settings with the keyboard,
 touch pointer swipes, reduced motion and Windows high contrast.
+Installation tests cover native prompt events (accept/dismiss/failure), browser
+instructions, installed-window visibility, PNG dimensions, manifest resolution,
+offline reload at `/` and `/2048/`, and isolation from other apps' caches. Chrome
+and Edge validate actual installability through CDP using a temporary non-incognito
+profile; OS confirmation itself is tested through the prompt-event contract.
 Playwright runs a temporary HTTP server on port **4174** and stops it afterwards.
 
 ## GitHub Pages
@@ -210,6 +247,7 @@ layered highlights; it does not use Apple's native SwiftUI/UIKit renderer.
 - `src/game.js` — pure game rules and saved-game validation
 - `src/app.js` — input, animation, UI, browser storage and appearance
 - `src/platform.js` — browser/platform hints and UI style selection
+- `src/install.js`, `manifest.webmanifest`, `sw.js` — installation and offline app shell
 - `index.html`, `styles.css`, `platform.css`, `assets/` — interface and visual design
 - `tests/` — Node unit tests and Playwright browser tests
 

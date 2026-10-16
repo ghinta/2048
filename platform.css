@@ -96,7 +96,7 @@
 :root:is([data-ui="material"], [data-ui="fluent"]) .board { border-radius: var(--platform-radius); box-shadow: none; }
 :root:is([data-ui="material"], [data-ui="fluent"]) :is(.board-cell, .tile-face) { border-radius: var(--tile-radius); box-shadow: none; }
 :root:is([data-ui="material"], [data-ui="fluent"]) .tile-face { background: var(--tile-bg, #e8def8); color: var(--tile-ink, #342651); border: 1px solid var(--cell-border); text-shadow: none; font-weight: 600; letter-spacing: -.5px; }
-:root:is([data-ui="material"], [data-ui="fluent"]) :is(.toolbar-group, .icon-button, .undo-button, .new-game-button, .primary-button, .secondary-button, .platform-setting select, .toast) { border-radius: var(--control-radius); }
+:root:is([data-ui="material"], [data-ui="fluent"]) :is(.toolbar-group, .icon-button, .install-button, .undo-button, .new-game-button, .primary-button, .secondary-button, .platform-setting select, .toast) { border-radius: var(--control-radius); }
 :root:is([data-ui="material"], [data-ui="fluent"]) :is(.new-game-button, .primary-button) { background: var(--platform-primary); color: var(--on-primary); border-color: transparent; box-shadow: none; }
 :root:is([data-ui="material"], [data-ui="fluent"]) .new-game-button .icon { color: inherit; }
 :root:is([data-ui="material"], [data-ui="fluent"]) :is(.new-game-button, .primary-button):hover { filter: brightness(.94); }
