@@ -2,9 +2,52 @@
 
 A German-language 2048 game with adaptive Liquid Glass, Material 3 and Fluent
 interfaces and light/dark themes.
-Implemented with HTML, CSS and JavaScript; no runtime dependencies.
+The web frontend uses HTML, CSS and JavaScript with no runtime JavaScript
+dependencies. An optional Tauri 2 host packages the same game as a desktop app.
 
-**Play:** https://ghinta.github.io/2048/
+| Version | Open / download |
+| --- | --- |
+| Web / installable PWA | **[ghinta.github.io/2048](https://ghinta.github.io/2048/)** |
+| Desktop installers | [GitHub Releases](https://github.com/ghinta/2048/releases) |
+| Development installers | [Desktop CI builds](https://github.com/ghinta/2048/actions/workflows/desktop.yml) → successful run → Artifacts |
+
+## Web / PWA on GitHub Pages
+
+The PWA stays hosted at **https://ghinta.github.io/2048/**. It runs directly in
+the browser and can be installed without downloading a desktop binary. Choose
+**App installieren**, or use the browser's install menu. Safari on iPhone/iPad
+uses **Teilen → Zum Home-Bildschirm**; supported macOS Safari versions use
+**Ablage → Zum Dock hinzufügen**. Installation options depend on the browser.
+
+After the first successful online load of the exported app, its service worker
+caches the game for offline use. Updates become active after existing app
+windows/tabs close. Browser storage policies can affect offline availability.
+Games and preferences are stored locally; desktop installations and the PWA use
+separate storage and do not automatically transfer saved games.
+
+## Desktop downloads
+
+The [desktop workflow](.github/workflows/desktop.yml) builds these installers:
+
+| Platform | Architecture | Package | Automatic UI |
+| --- | --- | --- | --- |
+| Windows | x64 | NSIS `.exe`, `.msi` | Fluent / Windows 11 style |
+| Linux | x64 | `.AppImage`, `.deb` | Material 3 |
+| macOS | Apple Silicon (`aarch64`) | `.dmg` | Liquid Glass |
+| macOS | Intel (`x64`) | `.dmg` | Liquid Glass |
+
+Successful CI builds retain zipped **Artifacts** for 30 days. Downloading CI
+artifacts requires a GitHub sign-in. Version-tagged builds publish the installers
+and a `SHA256SUMS` file to **[GitHub Releases](https://github.com/ghinta/2048/releases)**
+for public downloads; if no release is listed yet, use a successful CI build.
+Binaries are hosted separately from the GitHub Pages PWA.
+
+Windows requires Microsoft WebView2; the installer bootstraps it if it is missing.
+Linux packages are built on Ubuntu 24.04 and require compatible system libraries,
+including GTK and WebKitGTK 4.1; they do not target every Linux distribution.
+Packages are unsigned, and macOS packages are not notarized. Windows or macOS may
+warn or block installation according to local policy. Signing/notarization is not
+configured. Mobile native packages are not built; use the PWA on Android/iOS.
 
 ## Playing
 
@@ -86,6 +129,43 @@ PNG icons at their required sizes; the build versions icon and manifest URLs.
 Existing home-screen shortcuts can retain their old icon. After an update, remove
 the old shortcut and add the page again; there is no need to clear browser storage.
 
+## Building the desktop app
+
+In addition to the web development tools, install [Rust with rustup](https://rustup.rs/)
+and the [Tauri platform prerequisites](https://v2.tauri.app/start/prerequisites/).
+`rust-toolchain.toml` pins Rust; `src-tauri/Cargo.lock` pins Rust dependencies.
+Windows needs the MSVC C++ build tools and WebView2; macOS needs Xcode command-line
+tools. On Ubuntu 24.04, install the Linux dependencies used by CI:
+
+```sh
+sudo apt-get install libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev librsvg2-dev patchelf
+```
+
+Then install the locked npm dependencies and start the native development window:
+
+```sh
+npm ci
+npm run desktop:dev
+```
+
+The Tauri CLI starts the web development server automatically. To make an
+installer, run the command for your build host:
+
+```sh
+# Linux
+npm run desktop:build -- --bundles deb,appimage
+# Windows
+npm run desktop:build -- --bundles nsis,msi
+# macOS
+npm run desktop:build -- --bundles dmg
+```
+
+Installers are written under `src-tauri/target/release/bundle/` (or under the
+selected target triple when `--target` is provided). The frontend is embedded
+locally; a network connection to GitHub Pages is not needed to play. Tauri does
+not register the PWA service worker or display the PWA install button. Regenerate
+native PNG/ICO/ICNS icons with `npm run desktop:icons` from the same 2048 master.
+
 ## Adaptive platform UI
 
 All three styles use the same markup, game logic, storage, keyboard controls and
@@ -126,9 +206,10 @@ platform value takes priority; otherwise navigator platform and user-agent hints
 provide the OS fallback. Selection is synchronous before the first render and
 requires no IPC call or additional frontend dependency. Manual style preferences
 still take priority. Unknown native platforms fall back to Liquid Glass.
-This repository contains the web frontend, not a Tauri Rust host or native build
-configuration. Native runtime signals are simulated in browser tests; packaged
-Tauri applications still require validation in their host project.
+The native host registers the OS plugin. Browser tests simulate runtime signals
+and cover startup, manual overrides and reset; CI also compiles and packages the
+native host for each desktop target. Automated browser tests do not replace
+opening the installers and checking the app on the corresponding operating system.
 
 Edge is checked before Chrome because its user agent also contains Chrome.
 Low-entropy `navigator.userAgentData` is used when available, with user-agent
@@ -233,6 +314,31 @@ The workflow pins the Ubuntu 26.04 LTS runner, uses the Node.js version in
 `.nvmrc` and npm version in `package.json`, and uses current stable GitHub Actions
 with Node.js 24 runtimes (including the Pages artifact uploader's dependencies).
 
+## Desktop CI and releases
+
+The independent [desktop workflow](.github/workflows/desktop.yml) validates the web
+app in Chromium and WebKit, checks package/Tauri/Cargo version consistency, then
+builds all four desktop targets using the locked npm/Rust dependencies. It runs
+on relevant branch pushes, pull requests, matching version tags, and manual
+dispatch. Linux uses Ubuntu 24.04 for package compatibility; Windows uses
+Windows 2025; the two macOS targets build on macOS 15. Desktop jobs do not deploy
+or replace GitHub Pages. The current desktop matrix does not include ARM Linux
+or ARM Windows.
+
+To publish a desktop version, update the version in `package.json`,
+`src-tauri/tauri.conf.json` and `src-tauri/Cargo.toml`, refresh both lockfiles,
+and commit. Push a matching tag, for example `v1.0.0` for version `1.0.0`:
+
+```sh
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+The release job runs only for version-tag pushes and after every validation and
+desktop build succeeds. It attaches all installers and SHA-256 checksums to a
+GitHub Release. Only that job receives `contents: write`; builds use read-only
+repository access. No custom credentials are required for unsigned packages.
+
 ## Design references
 
 The interface follows Apple's guidance on [materials](https://developer.apple.com/design/human-interface-guidelines/materials)
@@ -247,6 +353,10 @@ layered highlights; it does not use Apple's native SwiftUI/UIKit renderer.
 - `src/game.js` — pure game rules and saved-game validation
 - `src/app.js` — input, animation, UI, browser storage and appearance
 - `src/platform.js` — browser/platform hints and UI style selection
+- `src/install.js`, `sw.js`, `manifest.webmanifest` — PWA installation and offline shell
+- `src-tauri/` — native Tauri host, capabilities, icons and Rust dependency lockfile
+- `.github/workflows/pages.yml` — web/PWA tests and GitHub Pages deployment
+- `.github/workflows/desktop.yml` — desktop CI artifacts and tagged releases
 - `src/install.js`, `manifest.webmanifest`, `sw.js` — installation and offline app shell
 - `index.html`, `styles.css`, `platform.css`, `assets/` — interface and visual design
 - `tests/` — Node unit tests and Playwright browser tests

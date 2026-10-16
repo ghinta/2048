@@ -29,6 +29,8 @@ for (const profile of profiles) {
     await page.unroute(/\/src\/app\.js(?:\?|$)/);
     await page.reload();
     await expect(page.locator(".tile")).toHaveCount(2);
+    await expect(page.locator("#install-button")).toBeHidden();
+    expect(await page.evaluate(async () => "serviceWorker" in navigator ? (await navigator.serviceWorker.getRegistrations()).length : 0)).toBe(0);
     await page.locator("#settings-button").click();
     await expect(page.locator("#platform-detection")).toContainText(`Tauri · ${profile.os} · Automatisch`);
     const manual = profile.style === "fluent" ? "material" : "fluent";

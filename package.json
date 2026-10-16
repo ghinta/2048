@@ -10,13 +10,17 @@
     "test": "node --test tests/*.test.js",
     "test:e2e": "npm run build && playwright test",
     "icons": "node scripts/generate-icons.js",
-    "build": "node scripts/build.js"
+    "build": "node scripts/build.js",
+    "desktop:dev": "tauri dev",
+    "desktop:build": "tauri build --locked",
+    "desktop:icons": "node scripts/generate-desktop-icons.js"
   },
   "engines": {
     "node": "^24.22.0",
     "npm": "^12.2.0"
   },
   "devDependencies": {
-    "@playwright/test": "1.64.1"
+    "@playwright/test": "1.64.1",
+    "@tauri-apps/cli": "2.12.3"
   }
 }

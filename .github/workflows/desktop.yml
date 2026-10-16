@@ -1,0 +1,154 @@
+name: Build desktop apps
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+    paths:
+      - ".github/workflows/desktop.yml"
+      - ".github/desktop-release-notes.md"
+      - "src-tauri/**"
+      - "src/**"
+      - "assets/**"
+      - "scripts/**"
+      - "tests/**"
+      - "*.css"
+      - "*.html"
+      - "*.json"
+      - "*.js"
+      - "*.webmanifest"
+      - ".nvmrc"
+      - "rust-toolchain.toml"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+jobs:
+  validate:
+    name: Validate web app and release version
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Set up npm
+        run: npm install --global "$(node -p 'require("./package.json").packageManager')"
+      - run: npm ci
+      - name: Check desktop and release versions
+        env:
+          RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
+        run: |
+          python3 - <<'PY'
+          import json, os, tomllib
+          from pathlib import Path
+          version = json.loads(Path('package.json').read_text())['version']
+          assert json.loads(Path('src-tauri/tauri.conf.json').read_text())['version'] == version
+          assert tomllib.loads(Path('src-tauri/Cargo.toml').read_text())['package']['version'] == version
+          if os.environ['RELEASE_TAG']:
+              assert os.environ['RELEASE_TAG'] == f'v{version}', 'Tag must match the app version'
+          PY
+      - run: npm test
+      - run: npx playwright install --with-deps chromium webkit
+      - run: npm run test:e2e
+        env:
+          PLAYWRIGHT_ENGINES: chromium,webkit
+
+  build:
+    name: ${{ matrix.name }}
+    needs: validate
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux x64
+            runner: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+            bundles: deb,appimage
+          - name: Windows x64
+            runner: windows-2025
+            target: x86_64-pc-windows-msvc
+            bundles: nsis,msi
+          - name: macOS Apple Silicon
+            runner: macos-15
+            target: aarch64-apple-darwin
+            bundles: dmg
+          - name: macOS Intel
+            runner: macos-15
+            target: x86_64-apple-darwin
+            bundles: dmg
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Set up npm
+        run: npm install --global "$(node -p 'require("./package.json").packageManager')"
+      - run: npm ci
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev librsvg2-dev patchelf
+      - name: Install pinned Rust toolchain and target
+        env:
+          RUST_TARGET: ${{ matrix.target }}
+        run: |
+          rustup show
+          rustup target add "$RUST_TARGET"
+          cargo fmt --manifest-path src-tauri/Cargo.toml --check
+      - name: Build desktop installers
+        env:
+          RUST_TARGET: ${{ matrix.target }}
+          BUNDLE_FORMATS: ${{ matrix.bundles }}
+          APPIMAGE_EXTRACT_AND_RUN: "1"
+        run: npm run desktop:build -- --target "$RUST_TARGET" --bundles "$BUNDLE_FORMATS"
+      - name: Collect installers
+        env:
+          RUST_TARGET: ${{ matrix.target }}
+        run: node scripts/collect-desktop-artifacts.js "$RUST_TARGET"
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: desktop-${{ matrix.target }}
+          path: desktop-artifacts/
+          if-no-files-found: error
+          retention-days: 30
+
+  release:
+    name: Publish desktop downloads
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/download-artifact@v8.0.2
+        with:
+          pattern: desktop-*
+          merge-multiple: true
+          path: desktop-artifacts
+      - name: Create release with installers and checksums
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          cd desktop-artifacts
+          sha256sum * > SHA256SUMS
+          cd ..
+          gh release create "$RELEASE_TAG" desktop-artifacts/* --verify-tag --title "2048 $RELEASE_TAG" --notes-file .github/desktop-release-notes.md

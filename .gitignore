@@ -2,3 +2,6 @@ dist/
 node_modules/
 test-results/
 .DS_Store
+src-tauri/target/
+src-tauri/gen/
+desktop-artifacts/

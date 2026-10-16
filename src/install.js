@@ -7,7 +7,7 @@ let installed = false;
 let prompting = false;
 
 function updateButton() {
-  button.hidden = !isSecureContext || installed || standalone.matches || navigator.standalone === true;
+  button.hidden = browser === "Tauri" || !isSecureContext || installed || standalone.matches || navigator.standalone === true;
   button.disabled = prompting;
 }
 
@@ -72,7 +72,7 @@ standalone.addEventListener("change", updateButton);
 updateButton();
 
 // Only exported builds cache an app shell. Source development stays uncached.
-if (isSecureContext && "serviceWorker" in navigator && new URL(import.meta.url).searchParams.has("v")) {
+if (browser !== "Tauri" && isSecureContext && "serviceWorker" in navigator && new URL(import.meta.url).searchParams.has("v")) {
   const register = () => navigator.serviceWorker.register(new URL("../sw.js", import.meta.url), { updateViaCache: "none" }).catch(() => {
     // Browser policy may block offline storage; the online game still works.
   });
