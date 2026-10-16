@@ -1,5 +1,9 @@
 import { test, expect } from "@playwright/test";
 
+// Module interception must not be bypassed by a worker's offline cache.
+// Installation and service-worker behavior have their own browser suite.
+test.use({ serviceWorkers: "block" });
+
 const profiles = [
   { browser: "Chrome", os: "Android", style: "material", userAgent: "Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 Chrome/134.0.0.0 Mobile Safari/537.36", platform: "Linux armv8l", maxTouchPoints: 5 },
   { browser: "Edge", os: "Windows", style: "fluent", userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/134.0.0.0 Safari/537.36 Edg/134.0.0.0", platform: "Win32", maxTouchPoints: 0 },

@@ -13,7 +13,7 @@ const overlay = $("#game-overlay");
 const helpDialog = $("#help-dialog");
 const restartDialog = $("#restart-dialog");
 const settingsDialog = $("#settings-dialog");
-const dialogs = [helpDialog, restartDialog, settingsDialog];
+const dialogs = [helpDialog, restartDialog, settingsDialog, $("#install-dialog")];
 const dialogOpen = () => dialogs.some((dialog) => dialog.open);
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
 const systemTheme = matchMedia("(prefers-color-scheme: dark)");
