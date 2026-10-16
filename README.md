@@ -167,6 +167,8 @@ selected target triple when `--target` is provided). The frontend is embedded
 locally; a network connection to GitHub Pages is not needed to play. Tauri does
 not register the PWA service worker or display the PWA install button. Regenerate
 native PNG/ICO/ICNS icons with `npm run desktop:icons` from the same 2048 master.
+Windows installers use the product name `2048-Spiel` because WiX misinterprets
+a numeric-only MSI summary subject. The game window and PWA are still named `2048`.
 
 ## Adaptive platform UI
 
