@@ -29,12 +29,20 @@ Implemented with HTML, CSS and JavaScript; no runtime dependencies.
 
 ## Local development
 
-Requirements: **Node.js 22+**, npm and **Python 3**. Serve your repository checkout:
+Requirements: **Node.js 24 LTS** (24.22.0 or newer in the 24.x line),
+**npm 12** (12.2.0 or newer in the 12.x line) and **Python 3**.
+`.nvmrc` pins the tested Node.js version; `package.json` pins the npm version
+used by CI. Serve your repository checkout:
 
 ```sh
+nvm install
+nvm use
+npm install --global npm@12.2.0
 npm ci
 npm run dev
 ```
+
+If you do not use nvm, install the Node.js version in `.nvmrc` directly.
 
 The development server listens on port **4173**. There is no build step needed
 to play or edit the game. Changes to HTML, CSS and modules appear after a refresh.
@@ -196,6 +204,9 @@ To configure a new repository, choose **Settings → Pages → Source → GitHub
 This setting is already configured for `ghinta/2048`. Publishing setup requires
 repository administration permission; running the game does not. `.nojekyll`
 is included in the export, and the site requires no server-side processing.
+The workflow pins the Ubuntu 26.04 LTS runner, uses the Node.js version in
+`.nvmrc` and npm version in `package.json`, and uses current stable GitHub Actions
+with Node.js 24 runtimes (including the Pages artifact uploader's dependencies).
 
 ## Design references
 
