@@ -12,20 +12,7 @@
     <link rel="icon" type="image/svg+xml" href="./assets/icon.svg">
     <link rel="stylesheet" href="./styles.css">
     <link rel="stylesheet" href="./platform.css">
-    <script>
-      try {
-        const theme = localStorage.getItem('2048-glass-theme');
-        document.documentElement.dataset.theme = theme === 'dark' || theme === 'light' ? theme : (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-      } catch { document.documentElement.dataset.theme = 'light'; }
-      try {
-        const appearance = JSON.parse(localStorage.getItem('2048-glass-appearance') || '{}');
-        if (appearance?.version === 1) {
-          if (typeof appearance.glassLevel === 'number' && Number.isFinite(appearance.glassLevel)) document.documentElement.style.setProperty('--glass-level', Math.max(0, Math.min(100, appearance.glassLevel)) / 100);
-          document.documentElement.dataset.layout = appearance.fillScreen === false ? 'square' : 'fill';
-          document.documentElement.dataset.reduceTransparency = String(appearance.reduceTransparency === true);
-        }
-      } catch { /* Default appearance also works without browser storage. */ }
-    </script>
+    <script src="./src/platform.js"></script>
     <script type="module" src="./src/app.js"></script>
   </head>
   <body>

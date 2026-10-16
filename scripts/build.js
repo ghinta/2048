@@ -13,8 +13,9 @@ const version = createHash("sha256").update(contents.join("\0")).digest("hex").s
 const html = contents[0]
   .replace('href="./styles.css"', `href="./styles.css?v=${version}"`)
   .replace('href="./platform.css"', `href="./platform.css?v=${version}"`)
+  .replace('src="./src/platform.js"', `src="./src/platform.js?v=${version}"`)
   .replace('src="./src/app.js"', `src="./src/app.js?v=${version}"`);
-const app = contents[2].replace('"./game.js"', `"./game.js?v=${version}"`).replace('"./platform.js"', `"./platform.js?v=${version}"`);
+const app = contents[2].replace('"./game.js"', `"./game.js?v=${version}"`);
 await Promise.all([
   writeFile("dist/index.html", html),
   writeFile("dist/src/app.js", app),

@@ -1,5 +1,5 @@
 import { SIZE, addTile, canMove, hasWon, moveBoard, newBoard, readSavedGame } from "./game.js";
-import { detectPlatform, resolveUIStyle, UI_LABELS, UI_STYLES } from "./platform.js";
+const { resolveUIStyle, UI_LABELS, UI_STYLES, defaultAppearance: createDefaultAppearance, updateThemeColor, initial } = globalThis.PlatformUI;
 
 const STORAGE = "2048-glass-game";
 const BEST_STORAGE = "2048-glass-best";
@@ -17,8 +17,8 @@ const dialogs = [helpDialog, restartDialog, settingsDialog];
 const dialogOpen = () => dialogs.some((dialog) => dialog.open);
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
 const systemTheme = matchMedia("(prefers-color-scheme: dark)");
-const detectedPlatform = detectPlatform(navigator);
-const defaultAppearance = () => ({ glassLevel: 35, fillScreen: true, reduceTransparency: matchMedia("(prefers-reduced-transparency: reduce)").matches });
+const detectedPlatform = initial.detected;
+const defaultAppearance = () => createDefaultAppearance(matchMedia("(prefers-reduced-transparency: reduce)").matches);
 const numberFormat = new Intl.NumberFormat("de-DE");
 
 let storageWarningShown = false;
@@ -29,9 +29,9 @@ let queuedDirection = null;
 let overlayKind = null;
 let best = 0;
 let state;
-let appearance = defaultAppearance();
-let themePreference = "system";
-let uiPreference = "auto";
+let appearance = { ...initial.preferences.appearance };
+let themePreference = initial.preferences.themePreference;
+let uiPreference = initial.preferences.uiPreference;
 
 function notify(message) {
   const toast = $("#toast");
@@ -54,19 +54,8 @@ try {
   if (raw) {
     try { state = readSavedGame(JSON.parse(raw)); } catch { /* An invalid save starts a fresh round. */ }
   }
-  const savedTheme = localStorage.getItem("2048-glass-theme");
-  if (["light", "dark", "system"].includes(savedTheme)) themePreference = savedTheme;
-  const savedUI = localStorage.getItem("2048-ui-style");
-  if (UI_STYLES.includes(savedUI)) uiPreference = savedUI;
-  try {
-    const savedAppearance = JSON.parse(localStorage.getItem("2048-glass-appearance"));
-    if (savedAppearance?.version === 1) {
-      if (typeof savedAppearance.glassLevel === "number" && Number.isFinite(savedAppearance.glassLevel)) appearance.glassLevel = Math.round(Math.max(0, Math.min(100, savedAppearance.glassLevel)));
-      if (typeof savedAppearance.fillScreen === "boolean") appearance.fillScreen = savedAppearance.fillScreen;
-      if (typeof savedAppearance.reduceTransparency === "boolean") appearance.reduceTransparency = savedAppearance.reduceTransparency;
-    }
-  } catch { /* Invalid appearance data uses defaults without affecting the game. */ }
 } catch { storageWarning(); }
+if (!initial.preferences.storageAvailable) storageWarning();
 
 state ??= { board: newBoard(), score: 0, moves: 0, continued: false };
 best = Math.max(best, state.score);
@@ -299,7 +288,7 @@ function updateThemeButton() {
   const dark = document.documentElement.dataset.theme === "dark";
   $("#theme-button").setAttribute("aria-label", dark ? "Helle Darstellung aktivieren" : "Dunkle Darstellung aktivieren");
   $("#theme-icon").setAttribute("href", dark ? "#icon-sun" : "#icon-moon");
-  $("meta[name='theme-color']").setAttribute("content", getComputedStyle(document.documentElement).getPropertyValue("--page").trim());
+  updateThemeColor();
 }
 
 function setUIStyle(preference, persist = false) {

@@ -7,7 +7,33 @@ const profiles = [
 ];
 
 for (const profile of profiles) {
+  test(`${profile.browser}/${profile.os}: appearance is ready before the game module loads`, async ({ page }) => {
+    await page.addInitScript((profile) => {
+      for (const key of ["userAgent", "platform", "maxTouchPoints"]) Object.defineProperty(navigator, key, { get: () => profile[key] });
+      Object.defineProperty(navigator, "userAgentData", { get: () => undefined });
+      if (!localStorage.getItem("2048-ui-style")) localStorage.setItem("2048-ui-style", "auto");
+      localStorage.setItem("2048-glass-theme", "dark");
+      localStorage.setItem("2048-glass-appearance", JSON.stringify({ version: 1, glassLevel: 81.6, fillScreen: false, reduceTransparency: true }));
+    }, profile);
+    // No game code may help initialize the appearance in this test.
+    await page.route(/\/src\/app\.js(?:\?|$)/, (route) => route.abort());
+    await page.goto("./");
+    for (const style of [profile.style, profile.style === "fluent" ? "material" : "fluent"]) {
+      await expect(page.locator("html")).toHaveAttribute("data-ui", style);
+      await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+      await expect(page.locator("html")).toHaveAttribute("data-layout", "square");
+      await expect(page.locator("html")).toHaveAttribute("data-reduce-transparency", "true");
+      const appearance = await page.evaluate(() => ({ glass: getComputedStyle(document.documentElement).getPropertyValue("--glass-level"), meta: document.querySelector('meta[name="theme-color"]').content, page: getComputedStyle(document.documentElement).getPropertyValue("--page").trim() }));
+      expect(Number(appearance.glass)).toBe(.82);
+      expect(appearance.meta).toBe(appearance.page);
+      await expect(page.locator(".tile")).toHaveCount(0);
+      await page.evaluate((next) => localStorage.setItem("2048-ui-style", next), profile.style === "fluent" ? "material" : "fluent");
+      if (style === profile.style) await page.reload();
+    }
+  });
+
   test(`${profile.browser}/${profile.os}: automatic UI, manual override, reload and reset`, async ({ page }) => {
+    test.setTimeout(60_000); // Three skins and both themes include several native UI interactions.
     // Emulate identity signals, not a different browser engine.
     await page.addInitScript((profile) => {
       for (const key of ["userAgent", "platform", "maxTouchPoints"]) Object.defineProperty(navigator, key, { get: () => profile[key] });
@@ -49,6 +75,41 @@ for (const profile of profiles) {
 }
 
 for (const style of ["material", "fluent"]) {
+  test(`${style}: touch input and keyboard settings work with reduced motion`, async ({ browser, baseURL }) => {
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, reducedMotion: "reduce", colorScheme: "dark" });
+    const page = await context.newPage();
+    await page.addInitScript((style) => {
+      localStorage.setItem("2048-ui-style", style);
+      localStorage.setItem("2048-glass-game", JSON.stringify({ version: 1, board: [2, 2, 4, 0, ...Array(12).fill(0)], score: 0, moves: 0, continued: false }));
+    }, style);
+    await page.goto(baseURL);
+    await page.locator("#board").waitFor();
+    // Pointer Events are the shared swipe API in Safari, Chrome and Edge.
+    await page.locator("#board").evaluate((board) => {
+      const bounds = board.getBoundingClientRect();
+      const dispatch = (type, x) => board.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerId: 1, pointerType: "touch", isPrimary: true, clientX: x, clientY: bounds.y + bounds.height / 2 }));
+      // Synthetic pointers cannot acquire real capture; exercise the handler normally afterwards.
+      const capture = board.setPointerCapture;
+      board.setPointerCapture = () => {};
+      try { dispatch("pointerdown", bounds.right - 24); dispatch("pointerup", bounds.left + 24); }
+      finally { board.setPointerCapture = capture; }
+    });
+    await expect(page.locator("#score")).toHaveText("4");
+    await page.getByRole("button", { name: "Darstellung öffnen" }).tap();
+    await page.getByRole("combobox", { name: "UI-Stil" }).focus();
+    await page.keyboard.press("Tab");
+    await expect(page.getByRole("radio", { name: "System", exact: true })).toBeFocused();
+    await page.keyboard.press("ArrowRight");
+    await expect(page.getByRole("radio", { name: "Hell", exact: true })).toBeChecked();
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+    await page.getByRole("switch", { name: "Bildschirm ausfüllen" }).focus();
+    await page.keyboard.press("Space");
+    await expect(page.locator("html")).toHaveAttribute("data-layout", "square");
+    await page.keyboard.press("Escape");
+    await expect(page.locator("#settings-button")).toBeFocused();
+    await context.close();
+  });
+
   test(`${style}: game input, tile values and viewport fit in both themes`, async ({ page }) => {
     await page.addInitScript((style) => {
       localStorage.setItem("2048-ui-style", style);
@@ -102,4 +163,37 @@ test("invalid saved UI preference falls back to automatic detection", async ({ p
   await page.locator("#settings-button").click();
   await expect(page.getByRole("combobox", { name: "UI-Stil" })).toHaveValue("auto");
   await expect(page.locator("#platform-detection")).toContainText("Automatisch");
+});
+
+test("blocked storage follows system dark mode before and after game initialization", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "localStorage", { get() { throw new DOMException("Blocked", "SecurityError"); } });
+  });
+  await page.route(/\/src\/app\.js(?:\?|$)/, (route) => route.abort());
+  await page.goto("./");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await page.unroute(/\/src\/app\.js(?:\?|$)/);
+  await page.reload();
+  await expect(page.locator(".tile")).toHaveCount(2);
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+});
+
+test("Windows high contrast preserves keyboard access and game input", async ({ page, browserName }) => {
+  test.skip(browserName !== "chromium", "Forced-colors emulation is available in Chromium.");
+  await page.emulateMedia({ forcedColors: "active", reducedMotion: "reduce" });
+  await page.addInitScript(() => {
+    localStorage.setItem("2048-ui-style", "fluent");
+    localStorage.setItem("2048-glass-game", JSON.stringify({ version: 1, board: [2, 2, 4, 0, ...Array(12).fill(0)], score: 0, moves: 0, continued: false }));
+  });
+  await page.goto("./");
+  await page.keyboard.press("ArrowLeft");
+  await expect(page.locator("#score")).toHaveText("4");
+  await page.locator("#settings-button").click();
+  const toggle = page.getByRole("switch", { name: "Bildschirm ausfüllen" });
+  await toggle.focus();
+  await page.keyboard.press("Space");
+  await expect(toggle).not.toBeChecked();
+  await expect(page.locator("html")).toHaveAttribute("data-layout", "square");
+  await expect(toggle).toHaveCSS("outline-style", "solid");
 });

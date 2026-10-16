@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { detectPlatform, resolveUIStyle } from "../src/platform.js";
+import "../src/platform.js";
+const { detectPlatform, resolveUIStyle, readPreferences } = globalThis.PlatformUI;
 
 const cases = [
   ["Chrome on Android", { userAgent: "Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 Chrome/134.0.0.0 Mobile Safari/537.36" }, "Chrome", "Android", "material"],
@@ -20,6 +21,8 @@ const cases = [
   ["Client Hints Edge", { userAgentData: { brands: [{ brand: "Not_A Brand" }, { brand: "Chromium" }, { brand: "Microsoft Edge" }], platform: "Windows" } }, "Edge", "Windows", "fluent"],
   ["Client Hints Chrome", { userAgentData: { brands: [{ brand: "Chromium" }, { brand: "Google Chrome" }], platform: "Android" } }, "Chrome", "Android", "material"],
   ["unknown browser", {}, "Anderer Browser", "Unbekannt", "liquid"],
+  ["incomplete Client Hints", { userAgentData: { brands: [null, {}], platform: "Windows" } }, "Anderer Browser", "Windows", "fluent"],
+  ["malformed Client Hints", { userAgentData: { brands: "Chromium", platform: "Android" } }, "Anderer Browser", "Android", "material"],
 ];
 
 for (const [name, input, browser, os, style] of cases) {
@@ -34,5 +37,26 @@ test("manual styles override detection; auto and invalid values use detection", 
     for (const preference of ["auto", "invalid", null, undefined]) {
       assert.equal(resolveUIStyle(preference, { style }), style);
     }
+  }
+});
+
+test("appearance defaults follow system preferences even with unavailable storage", () => {
+  const result = readPreferences(() => { throw new Error("Storage blocked"); }, { reduceTransparency: true });
+  assert.deepEqual(result, { uiPreference: "auto", themePreference: "system", appearance: { glassLevel: 35, fillScreen: true, reduceTransparency: true }, storageAvailable: false });
+});
+
+test("saved appearance is validated once for bootstrap and game initialization", () => {
+  const values = { "2048-ui-style": "fluent", "2048-glass-theme": "dark", "2048-glass-appearance": JSON.stringify({ version: 1, glassLevel: 75.7, fillScreen: false, reduceTransparency: true }) };
+  const read = (key) => values[key] ?? null;
+  assert.deepEqual(readPreferences(read), { uiPreference: "fluent", themePreference: "dark", appearance: { glassLevel: 76, fillScreen: false, reduceTransparency: true }, storageAvailable: true });
+  values["2048-ui-style"] = "invalid";
+  values["2048-glass-theme"] = "invalid";
+  for (const saved of ["{bad json", "null", '{"version":2,"glassLevel":90}', '{"version":1,"glassLevel":"50","fillScreen":0,"reduceTransparency":"false"}']) {
+    values["2048-glass-appearance"] = saved;
+    assert.deepEqual(readPreferences(read), { uiPreference: "auto", themePreference: "system", appearance: { glassLevel: 35, fillScreen: true, reduceTransparency: false }, storageAvailable: true });
+  }
+  for (const [saved, expected] of [[-10, 0], [120, 100]]) {
+    values["2048-glass-appearance"] = JSON.stringify({ version: 1, glassLevel: saved });
+    assert.equal(readPreferences(read).appearance.glassLevel, expected);
   }
 });

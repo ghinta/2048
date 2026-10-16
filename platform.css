@@ -110,7 +110,16 @@
 :root:is([data-ui="material"], [data-ui="fluent"]) .segmented-control input:checked + span { background: var(--button-bg); color: var(--ink); box-shadow: none; }
 :root:is([data-ui="material"], [data-ui="fluent"]) .setting-row input:checked { background: var(--accent); }
 :root:is([data-ui="material"], [data-ui="fluent"]) .setting-row input:checked::before { background: var(--on-primary); }
-:root[data-ui="material"] .segmented-control input:checked + span { background: var(--button-bg); }
+:root[data-ui="material"] .segmented-control { padding: 0; overflow: hidden; }
+:root[data-ui="material"] .segmented-control label + label { border-left: 1px solid var(--rule); }
+:root[data-ui="material"] .segmented-control span { border-radius: 0; padding-block: 12px; }
+:root[data-ui="material"] .segmented-control input:focus-visible + span { outline-offset: -3px; }
+:root[data-ui="material"] .segmented-control input:checked + span { background: var(--button-bg); font-weight: 600; }
+:root[data-ui="material"] .settings-list { border-radius: 16px; }
+:root[data-ui="material"] input[role="switch"] { width: 52px; height: 32px; flex-basis: 52px; border: 2px solid var(--muted); background: var(--board-bg); }
+:root[data-ui="material"] input[role="switch"]::before { inset: 6px auto auto 6px; width: 16px; height: 16px; background: var(--muted); box-shadow: none; transition: transform .2s, width .2s, height .2s; }
+:root[data-ui="material"] input[role="switch"]:checked { border-color: var(--accent); }
+:root[data-ui="material"] input[role="switch"]:checked::before { width: 24px; height: 24px; top: 2px; left: 2px; transform: translateX(20px); }
 :root[data-ui="material"] .brand img { border-radius: 12px; box-shadow: none; }
 :root[data-ui="material"] .score-value { color: var(--accent); font-weight: 500; }
 :root[data-ui="material"] .new-game-compact { background: var(--button-bg); border-radius: 16px; color: var(--ink); }
@@ -119,6 +128,13 @@
 :root[data-ui="fluent"] .toolbar-group { gap: 2px; }
 :root[data-ui="fluent"] .glass { box-shadow: 0 1px 0 #00000012; }
 :root[data-ui="fluent"] .game-card { box-shadow: 0 2px 5px #00000008; }
+:root[data-ui="fluent"] .settings-list { border-radius: 4px; }
+:root[data-ui="fluent"] .segmented-control span { position: relative; padding-block: 11px; }
+:root[data-ui="fluent"] .segmented-control input:checked + span::after { content: ""; position: absolute; bottom: 2px; left: calc(50% - 8px); width: 16px; height: 3px; border-radius: 2px; background: var(--accent); }
+:root[data-ui="fluent"] input[role="switch"] { width: 40px; height: 20px; flex-basis: 40px; border: 1px solid var(--muted); background: transparent; }
+:root[data-ui="fluent"] input[role="switch"]::before { inset: 3px auto auto 3px; width: 12px; height: 12px; background: var(--muted); box-shadow: none; }
+:root[data-ui="fluent"] input[role="switch"]:checked { border-color: var(--accent); }
+:root[data-ui="fluent"] input[role="switch"]:checked::before { transform: translateX(20px); }
 :root[data-ui="fluent"] .settings-sheet { background: rgb(var(--surface-rgb) / .94); -webkit-backdrop-filter: blur(30px); backdrop-filter: blur(30px); }
 :root[data-ui="fluent"][data-reduce-transparency="true"] .settings-sheet { background: rgb(var(--surface-rgb)); -webkit-backdrop-filter: none; backdrop-filter: none; }
 :root[data-ui="fluent"] .tile { --tile-bg: #e0effa; --tile-ink: #003c68; }
@@ -138,6 +154,18 @@
 
 @media (prefers-contrast: more) {
   :root:is([data-ui="material"], [data-ui="fluent"]) :is(.glass, .game-card, .board-cell, .platform-setting select) { border-color: var(--muted); }
+}
+@media (hover: hover) {
+  :root:is([data-ui="material"], [data-ui="fluent"]) .icon-button:hover { background: var(--inner); }
+  :root:is([data-ui="material"], [data-ui="fluent"]) .new-game-compact:hover { background: var(--button-bg); filter: brightness(.94); }
+}
+@media (forced-colors: active) {
+  :root:is([data-ui="material"], [data-ui="fluent"]) :is(.board-cell, .tile-face) { border: 1px solid CanvasText; }
+  :root:is([data-ui="material"], [data-ui="fluent"]) .segmented-control input:checked + span { outline: 2px solid Highlight; outline-offset: -3px; }
+  :root:is([data-ui="material"], [data-ui="fluent"]) input[role="switch"] { forced-color-adjust: none; background: Canvas; border-color: CanvasText; }
+  :root:is([data-ui="material"], [data-ui="fluent"]) input[role="switch"]::before { background: CanvasText; }
+  :root:is([data-ui="material"], [data-ui="fluent"]) input[role="switch"]:checked { background: Highlight; border-color: Highlight; }
+  :root:is([data-ui="material"], [data-ui="fluent"]) input[role="switch"]:checked::before { background: HighlightText; }
 }
 @supports not (backdrop-filter: blur(1px)) {
   :root[data-ui="fluent"] .settings-sheet { background: rgb(var(--surface-rgb)); }

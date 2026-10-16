@@ -33,11 +33,13 @@ jobs:
       - name: Test game logic
         run: npm test
 
-      - name: Install Chromium for browser tests
-        run: npx playwright install --with-deps chromium
+      - name: Install Chromium and WebKit for browser tests
+        run: npx playwright install --with-deps chromium webkit
 
       - name: Build and test in the browser
         run: npm run test:e2e
+        env:
+          PLAYWRIGHT_ENGINES: chromium,webkit
 
       - name: Upload static site
         uses: actions/upload-pages-artifact@v3
