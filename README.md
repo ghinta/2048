@@ -45,6 +45,8 @@ Binaries are hosted separately from the GitHub Pages PWA.
 Windows requires Microsoft WebView2; the installer bootstraps it if it is missing.
 Linux packages are built on Ubuntu 24.04 and require compatible system libraries,
 including GTK and WebKitGTK 4.1; they do not target every Linux distribution.
+Before opening an AppImage, mark it executable (for example,
+`chmod +x 2048_*.AppImage`). Install a `.deb` with your system package manager.
 Packages are unsigned, and macOS packages are not notarized. Windows or macOS may
 warn or block installation according to local policy. Signing/notarization is not
 configured. Mobile native packages are not built; use the PWA on Android/iOS.
