@@ -1,7 +1,7 @@
 # 2048
 
 A German-language 2048 game with adaptive Liquid Glass, Material 3 and Fluent
-interfaces and light/dark themes. This worktree contains the adaptive UI implementation.
+interfaces and light/dark themes.
 Implemented with HTML, CSS and JavaScript; no runtime dependencies.
 
 **Play:** https://ghinta.github.io/2048/
@@ -26,9 +26,7 @@ Implemented with HTML, CSS and JavaScript; no runtime dependencies.
 
 ## Local development
 
-Requirements: **Node.js 22+**, npm and **Python 3**. The implementation is isolated on branch
-`poc/platform-ui` in `/workspace/2048-platform-ui`. The original checkout is
-unchanged. Serve this worktree to preview it:
+Requirements: **Node.js 22+**, npm and **Python 3**. Serve your repository checkout:
 
 ```sh
 npm ci
