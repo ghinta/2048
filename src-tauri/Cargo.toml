@@ -1,0 +1,17 @@
+[package]
+name = "game-2048"
+version = "1.0.0"
+description = "2048 with adaptive platform UI"
+edition = "2021"
+publish = false
+
+[lib]
+name = "game_2048_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "=2.7.3", features = [] }
+
+[dependencies]
+tauri = { version = "=2.12.4", features = [] }
+tauri-plugin-os = "=2.4.0"

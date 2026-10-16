@@ -3,24 +3,36 @@
 (() => {
   const UI_STYLES = Object.freeze(["auto", "liquid", "material", "fluent"]);
   const UI_LABELS = Object.freeze({ liquid: "Liquid Glass", material: "Material 3", fluent: "Fluent" });
+  const NATIVE_PLATFORMS = Object.freeze({ windows: "Windows", linux: "Linux", macos: "macOS", ios: "iOS", android: "Android" });
 
-  function detectPlatform({ userAgent = "", platform = "", maxTouchPoints = 0, userAgentData } = {}) {
+  function readRuntime(environment = globalThis) {
+    return {
+      // Tauri injects these markers even when app.withGlobalTauri is disabled.
+      isTauri: environment.isTauri === true || Boolean(environment.__TAURI_INTERNALS__) || typeof environment.__TAURI_IPC__ === "function",
+      platform: environment.__TAURI_OS_PLUGIN_INTERNALS__?.platform,
+    };
+  }
+
+  function detectPlatform({ userAgent = "", platform = "", maxTouchPoints = 0, userAgentData } = {}, { isTauri = false, platform: nativePlatform } = {}) {
     const brands = Array.isArray(userAgentData?.brands) ? userAgentData.brands.map((entry) => entry?.brand) : [];
     const device = userAgentData?.platform || platform;
     const android = /Android/i.test(`${device} ${userAgent}`);
     const apple = /iPhone|iPad|iPod|Mac/i.test(`${device} ${userAgent}`);
     const ipad = /iPad/i.test(userAgent) || (/Mac/i.test(device) && maxTouchPoints > 1);
-    const os = android ? "Android" : ipad ? "iPadOS" : /iPhone|iPod/i.test(userAgent) ? "iOS"
+    const nativeOS = isTauri && Object.hasOwn(NATIVE_PLATFORMS, nativePlatform) ? NATIVE_PLATFORMS[nativePlatform] : null;
+    const os = nativeOS || (android ? "Android" : ipad ? "iPadOS" : /iPhone|iPod/i.test(userAgent) ? "iOS"
       : /Win/i.test(`${device} ${userAgent}`) ? "Windows" : apple ? "macOS"
-      : /Linux/i.test(`${device} ${userAgent}`) ? "Linux" : "Unbekannt";
+      : /Linux/i.test(`${device} ${userAgent}`) ? "Linux" : "Unbekannt");
     // Edge includes Chrome/Safari tokens. iOS variants identify themselves separately.
     const edge = brands.includes("Microsoft Edge") || /Edg(?:e|A|iOS)?\//.test(userAgent);
     const firefox = /Firefox\/|FxiOS\//.test(userAgent);
     const otherChromium = /OPR\/|Opera|SamsungBrowser\//.test(userAgent);
     const chrome = !edge && !otherChromium && (brands.includes("Google Chrome") || /Chrome\/|CriOS\//.test(userAgent));
     const safari = !edge && !chrome && !firefox && !otherChromium && /Version\/.+Safari\//.test(userAgent);
-    const browser = edge ? "Edge" : chrome ? "Chrome" : safari ? "Safari" : firefox ? "Firefox" : "Anderer Browser";
-    const style = edge ? "fluent" : chrome ? "material" : safari ? "liquid"
+    const browser = isTauri ? "Tauri" : edge ? "Edge" : chrome ? "Chrome" : safari ? "Safari" : firefox ? "Firefox" : "Anderer Browser";
+    // Native apps follow the OS, regardless of the embedded webview's browser tokens.
+    const style = isTauri ? (os === "Windows" ? "fluent" : os === "Linux" || os === "Android" ? "material" : "liquid")
+      : edge ? "fluent" : chrome ? "material" : safari ? "liquid"
       : android ? "material" : os === "Windows" ? "fluent" : "liquid";
     return { browser, os, style };
   }
@@ -65,7 +77,7 @@
 
   let initial = null;
   if (typeof document !== "undefined") {
-    const detected = detectPlatform(navigator);
+    const detected = detectPlatform(navigator, readRuntime());
     const preferences = readPreferences((key) => localStorage.getItem(key), {
       reduceTransparency: matchMedia("(prefers-reduced-transparency: reduce)").matches,
     });
@@ -80,5 +92,5 @@
     initial = { detected, preferences };
   }
 
-  globalThis.PlatformUI = Object.freeze({ UI_STYLES, UI_LABELS, detectPlatform, resolveUIStyle, defaultAppearance, readPreferences, updateThemeColor, initial });
+  globalThis.PlatformUI = Object.freeze({ UI_STYLES, UI_LABELS, readRuntime, detectPlatform, resolveUIStyle, defaultAppearance, readPreferences, updateThemeColor, initial });
 })();

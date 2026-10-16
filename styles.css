@@ -77,7 +77,15 @@ button { transition: background .2s, box-shadow .2s, transform .2s, opacity .2s;
 .brand { display: flex; gap: 12px; align-items: center; text-decoration: none; }
 .brand img { border-radius: 12px; box-shadow: 0 4px 12px #6c83b81c; }
 .brand-name { display: flex; align-items: baseline; gap: 13px; font-size: 23px; font-weight: 700; letter-spacing: -.8px; }
-.header-actions { display: flex; align-items: center; gap: 12px; }
+.header-actions { display: flex; align-items: center; gap: 8px; }
+.install-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 8px 14px; border-radius: 99px; font-size: 13px; }
+.install-button .icon { width: 20px; height: 20px; }
+.install-instructions { padding-left: 20px; margin-block: 16px 24px; font-size: 13px; color: var(--muted); }
+.install-instructions li + li { margin-top: 10px; }
+@media (max-width: 600px) {
+  .install-button { width: 44px; padding: 0; }
+  .install-button span { display: none; }
+}
 .toolbar-group { display: flex; align-items: center; gap: 6px; padding: 3px; border-radius: 99px; }
 .help-button { color: var(--muted); }
 .help-button:hover { color: var(--ink); }
