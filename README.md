@@ -153,11 +153,11 @@ installer, run the command for your build host:
 
 ```sh
 # Linux
-npm run desktop:build -- --bundles deb,appimage
+npm run desktop:build -- --bundles deb,appimage -- --locked
 # Windows
-npm run desktop:build -- --bundles nsis,msi
+npm run desktop:build -- --bundles nsis,msi -- --locked
 # macOS
-npm run desktop:build -- --bundles dmg
+npm run desktop:build -- --bundles dmg -- --locked
 ```
 
 Installers are written under `src-tauri/target/release/bundle/` (or under the

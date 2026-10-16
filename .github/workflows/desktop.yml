@@ -116,7 +116,7 @@ jobs:
           RUST_TARGET: ${{ matrix.target }}
           BUNDLE_FORMATS: ${{ matrix.bundles }}
           APPIMAGE_EXTRACT_AND_RUN: "1"
-        run: npm run desktop:build -- --target "$RUST_TARGET" --bundles "$BUNDLE_FORMATS"
+        run: npm run desktop:build -- --target "$RUST_TARGET" --bundles "$BUNDLE_FORMATS" -- --locked
       - name: Collect installers
         env:
           RUST_TARGET: ${{ matrix.target }}

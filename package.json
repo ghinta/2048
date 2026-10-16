@@ -12,7 +12,7 @@
     "icons": "node scripts/generate-icons.js",
     "build": "node scripts/build.js",
     "desktop:dev": "tauri dev",
-    "desktop:build": "tauri build --locked",
+    "desktop:build": "tauri build",
     "desktop:icons": "node scripts/generate-desktop-icons.js"
   },
   "engines": {
