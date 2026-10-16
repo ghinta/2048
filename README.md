@@ -114,6 +114,18 @@ runs the platform suite; Chromium also tests native touch input through CDP and
 forced-colors emulation. Cross-engine swipe checks dispatch Pointer Events;
 keyboard and touch taps use Playwright's input APIs. CI runs both engines.
 
+The same complete suite can also run in installed Google Chrome and Microsoft Edge:
+
+```sh
+PLAYWRIGHT_ENGINES=chrome,msedge npm run test:e2e
+```
+
+Playwright uses the installed stable browser channels. For portable browser binaries,
+set `CHROME_PATH` and `EDGE_PATH` to their executable paths. A separate test checks
+automatic selection with the browser's unmodified identity signals and records its
+version, user agent and detected style in the Playwright report. These desktop
+browser runs do not emulate the Windows compositor or an actual Android device.
+
 Browser tests cover keyboard and touch input, merging, undo, persistence,
 restart confirmation, win/continue, game over, dialogs, reduced motion,
 unavailable storage, accessible cell labels, and layouts from 320 to 1440 px.

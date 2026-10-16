@@ -6,6 +6,20 @@ const profiles = [
   { browser: "Safari", os: "iOS", style: "liquid", userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1", platform: "iPhone", maxTouchPoints: 5 },
 ];
 
+test("installed browser selects its style using unmodified identity signals", async ({ page, browser }, testInfo) => {
+  await page.goto("./");
+  const expected = testInfo.project.name === "webkit" ? { browser: "Safari", style: "liquid" }
+    : testInfo.project.name === "msedge" ? { browser: "Edge", style: "fluent" } : { browser: "Chrome", style: "material" };
+  await expect(page.locator("html")).toHaveAttribute("data-ui", expected.style);
+  await expect(page.locator(".tile")).toHaveCount(2);
+  await page.getByRole("button", { name: "Darstellung öffnen" }).click();
+  await expect(page.getByRole("combobox", { name: "UI-Stil" })).toHaveValue("auto");
+  await expect(page.locator("#platform-detection")).toContainText(`${expected.browser} ·`);
+  const identity = await page.evaluate(() => ({ userAgent: navigator.userAgent, brands: navigator.userAgentData?.brands, detected: PlatformUI.initial.detected }));
+  expect(identity.detected.browser).toBe(expected.browser);
+  await testInfo.attach("browser-identity", { body: JSON.stringify({ project: testInfo.project.name, version: browser.version(), ...identity }, null, 2), contentType: "application/json" });
+});
+
 for (const profile of profiles) {
   test(`${profile.browser}/${profile.os}: appearance is ready before the game module loads`, async ({ page }) => {
     await page.addInitScript((profile) => {
