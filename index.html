@@ -11,6 +11,7 @@
     <title>2048</title>
     <link rel="icon" type="image/svg+xml" href="./assets/icon.svg">
     <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="./platform.css">
     <script>
       try {
         const theme = localStorage.getItem('2048-glass-theme');
@@ -92,7 +93,17 @@
 
     <dialog class="modal settings-sheet" id="settings-dialog" aria-labelledby="settings-title">
       <div class="settings-header"><h2 id="settings-title">Darstellung</h2><button class="icon-button glass" type="button" data-close-dialog aria-label="Darstellung schließen"><svg class="icon"><use href="#icon-close"/></svg></button></div>
-      <section class="material-settings" aria-labelledby="glass-label">
+      <div class="platform-setting">
+        <label for="ui-style">UI-Stil</label>
+        <select id="ui-style" aria-describedby="platform-detection">
+          <option value="auto">Automatisch</option>
+          <option value="liquid">Apple · Liquid Glass</option>
+          <option value="material">Google · Material 3</option>
+          <option value="fluent">Microsoft · Fluent</option>
+        </select>
+        <p class="setting-description" id="platform-detection" role="status"></p>
+      </div>
+      <section class="material-settings" id="glass-settings" aria-labelledby="glass-label">
         <div class="setting-heading"><label id="glass-label" for="glass-level">Liquid Glass</label><output id="glass-value" for="glass-level">35 %</output></div>
         <div class="material-preview" role="img" aria-label="Vorschau des Glaseffekts">
           <div class="preview-art" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
@@ -105,7 +116,7 @@
       <fieldset class="theme-settings"><legend>Erscheinungsbild</legend><div class="segmented-control"><label><input type="radio" name="appearance-theme" value="system" checked><span>System</span></label><label><input type="radio" name="appearance-theme" value="light"><span>Hell</span></label><label><input type="radio" name="appearance-theme" value="dark"><span>Dunkel</span></label></div></fieldset>
       <div class="settings-list">
         <label class="setting-row" for="fill-screen"><span>Bildschirm ausfüllen</span><input id="fill-screen" type="checkbox" role="switch" checked></label>
-        <label class="setting-row" for="reduce-transparency"><span>Transparenz reduzieren</span><input id="reduce-transparency" type="checkbox" role="switch"></label>
+        <label class="setting-row" id="transparency-setting" for="reduce-transparency"><span>Transparenz reduzieren</span><input id="reduce-transparency" type="checkbox" role="switch"></label>
       </div>
       <button class="settings-reset" id="reset-appearance" type="button">Darstellung zurücksetzen</button>
     </dialog>

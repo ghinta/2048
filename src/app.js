@@ -1,4 +1,5 @@
 import { SIZE, addTile, canMove, hasWon, moveBoard, newBoard, readSavedGame } from "./game.js";
+import { detectPlatform, resolveUIStyle, UI_LABELS, UI_STYLES } from "./platform.js";
 
 const STORAGE = "2048-glass-game";
 const BEST_STORAGE = "2048-glass-best";
@@ -16,6 +17,7 @@ const dialogs = [helpDialog, restartDialog, settingsDialog];
 const dialogOpen = () => dialogs.some((dialog) => dialog.open);
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
 const systemTheme = matchMedia("(prefers-color-scheme: dark)");
+const detectedPlatform = detectPlatform(navigator);
 const defaultAppearance = () => ({ glassLevel: 35, fillScreen: true, reduceTransparency: matchMedia("(prefers-reduced-transparency: reduce)").matches });
 const numberFormat = new Intl.NumberFormat("de-DE");
 
@@ -29,6 +31,7 @@ let best = 0;
 let state;
 let appearance = defaultAppearance();
 let themePreference = "system";
+let uiPreference = "auto";
 
 function notify(message) {
   const toast = $("#toast");
@@ -53,6 +56,8 @@ try {
   }
   const savedTheme = localStorage.getItem("2048-glass-theme");
   if (["light", "dark", "system"].includes(savedTheme)) themePreference = savedTheme;
+  const savedUI = localStorage.getItem("2048-ui-style");
+  if (UI_STYLES.includes(savedUI)) uiPreference = savedUI;
   try {
     const savedAppearance = JSON.parse(localStorage.getItem("2048-glass-appearance"));
     if (savedAppearance?.version === 1) {
@@ -294,7 +299,21 @@ function updateThemeButton() {
   const dark = document.documentElement.dataset.theme === "dark";
   $("#theme-button").setAttribute("aria-label", dark ? "Helle Darstellung aktivieren" : "Dunkle Darstellung aktivieren");
   $("#theme-icon").setAttribute("href", dark ? "#icon-sun" : "#icon-moon");
-  $("meta[name='theme-color']").setAttribute("content", dark ? "#0c101a" : "#edf0f7");
+  $("meta[name='theme-color']").setAttribute("content", getComputedStyle(document.documentElement).getPropertyValue("--page").trim());
+}
+
+function setUIStyle(preference, persist = false) {
+  uiPreference = UI_STYLES.includes(preference) ? preference : "auto";
+  const style = resolveUIStyle(uiPreference, detectedPlatform);
+  document.documentElement.dataset.ui = style;
+  $("#ui-style").value = uiPreference;
+  $("#platform-detection").textContent = `${detectedPlatform.browser} · ${detectedPlatform.os} · ${uiPreference === "auto" ? "Automatisch" : "Manuell"}: ${UI_LABELS[style]}`;
+  $("#glass-settings").hidden = style !== "liquid";
+  $("#transparency-setting").hidden = style === "material";
+  updateThemeButton();
+  if (persist) {
+    try { localStorage.setItem("2048-ui-style", uiPreference); } catch { storageWarning(); }
+  }
 }
 
 function setTheme(preference, persist = false) {
@@ -342,11 +361,13 @@ $("#reduce-transparency").addEventListener("change", (event) => {
   saveAppearance();
 });
 document.querySelectorAll("[name='appearance-theme']").forEach((input) => input.addEventListener("change", () => setTheme(input.value, true)));
+$("#ui-style").addEventListener("change", (event) => setUIStyle(event.target.value, true));
 $("#reset-appearance").addEventListener("click", () => {
   appearance = defaultAppearance();
   applyAppearance();
   saveAppearance();
   setTheme("system", true);
+  setUIStyle("auto", true);
 });
 $("#theme-button").addEventListener("click", () => setTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark", true));
 systemTheme.addEventListener("change", () => { if (themePreference === "system") setTheme("system"); });
@@ -355,5 +376,6 @@ renderTiles();
 updateScores();
 applyAppearance();
 setTheme(themePreference);
+setUIStyle(uiPreference);
 save();
 syncOverlay();

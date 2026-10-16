@@ -9,6 +9,7 @@ async function openGame(page, state = initial) {
     localStorage.setItem("2048-glass-game", JSON.stringify(game));
     localStorage.removeItem("2048-glass-best");
     localStorage.setItem("2048-glass-theme", "light");
+    localStorage.setItem("2048-ui-style", "liquid");
     Math.random = () => 0;
   }, state);
   await page.goto("./");
@@ -244,6 +245,7 @@ test("appearance preferences persist, reduced transparency works and reset keeps
     localStorage.setItem("2048-glass-best", "8192");
     localStorage.setItem("2048-glass-theme", "light");
     localStorage.removeItem("2048-glass-appearance");
+    localStorage.setItem("2048-ui-style", "liquid");
   }, initial);
   await page.reload();
   const before = await saved(page);
@@ -266,6 +268,8 @@ test("appearance preferences persist, reduced transparency works and reset keeps
   await expect(page.getByRole("slider", { name: "Liquid Glass" })).toBeDisabled();
   await expect(page.getByRole("radio", { name: "Dunkel", exact: true })).toBeChecked();
   await page.getByRole("button", { name: "Darstellung zurücksetzen" }).click();
+  await expect(page.getByRole("combobox", { name: "UI-Stil" })).toHaveValue("auto");
+  await page.getByRole("combobox", { name: "UI-Stil" }).selectOption("liquid");
   await expect(page.getByRole("slider", { name: "Liquid Glass" })).toHaveValue("35");
   await expect(page.getByRole("slider", { name: "Liquid Glass" })).toBeEnabled();
   await expect(page.getByRole("switch", { name: "Bildschirm ausfüllen" })).toBeChecked();

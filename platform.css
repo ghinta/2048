@@ -1,0 +1,144 @@
+/* Platform skins share the game layout, input handling and accessibility. */
+.platform-setting { display: grid; gap: 8px; margin-bottom: 22px; }
+.platform-setting > label { font-size: 14px; font-weight: 600; }
+.platform-setting select { width: 100%; min-height: 44px; padding: 10px 12px; font: inherit; font-size: 13px; color: var(--ink); background: var(--button-bg); border: 1px solid var(--rule); border-radius: 12px; }
+.platform-setting select:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.platform-setting .setting-description { margin: 0; }
+
+:root[data-ui="material"] {
+  --page: #fdf7ff;
+  --ink: #1d1b20;
+  --muted: #49454f;
+  --faint: #625d68;
+  --accent: #6750a4;
+  --focus: #6750a4;
+  --surface-rgb: 243 237 247;
+  --glass-rgb: 236 230 240;
+  --glass-border: #cac4d0;
+  --button-bg: #e8def8;
+  --inner: #e8def8;
+  --rule: #cac4d0;
+  --board-bg: #e6e0e9;
+  --cell-bg: #d9d2df;
+  --cell-border: transparent;
+  --platform-primary: #6750a4;
+  --on-primary: #fff;
+  --platform-radius: 28px;
+  --control-radius: 24px;
+  --tile-radius: 16px;
+}
+:root[data-ui="material"][data-theme="dark"] {
+  --page: #141218;
+  --ink: #e6e0e9;
+  --muted: #cac4d0;
+  --faint: #b0a9b7;
+  --accent: #d0bcff;
+  --focus: #d0bcff;
+  --surface-rgb: 33 31 38;
+  --glass-rgb: 43 41 48;
+  --glass-border: #49454f;
+  --button-bg: #4a4458;
+  --inner: #4a4458;
+  --rule: #49454f;
+  --board-bg: #2b2930;
+  --cell-bg: #36323d;
+  --platform-primary: #d0bcff;
+  --on-primary: #381e72;
+}
+:root[data-ui="fluent"] {
+  --page: #f3f3f3;
+  --ink: #1b1b1b;
+  --muted: #5d5d5d;
+  --faint: #666;
+  --accent: #005fb8;
+  --focus: #005fb8;
+  --surface-rgb: 249 249 249;
+  --glass-rgb: 255 255 255;
+  --glass-border: #00000014;
+  --button-bg: #ffffffb3;
+  --inner: #00000009;
+  --rule: #00000014;
+  --board-bg: #eaeaea;
+  --cell-bg: #f7f7f7;
+  --cell-border: #0000000a;
+  --platform-primary: #005fb8;
+  --on-primary: #fff;
+  --platform-radius: 8px;
+  --control-radius: 4px;
+  --tile-radius: 4px;
+}
+:root[data-ui="fluent"][data-theme="dark"] {
+  --page: #202020;
+  --ink: #fff;
+  --muted: #d0d0d0;
+  --faint: #b6b6b6;
+  --accent: #60cdff;
+  --focus: #60cdff;
+  --surface-rgb: 39 39 39;
+  --glass-rgb: 50 50 50;
+  --glass-border: #ffffff14;
+  --button-bg: #ffffff0f;
+  --inner: #ffffff0a;
+  --rule: #ffffff14;
+  --board-bg: #1c1c1c;
+  --cell-bg: #2e2e2e;
+  --cell-border: #ffffff08;
+  --platform-primary: #60cdff;
+  --on-primary: #003e56;
+}
+
+:root:is([data-ui="material"], [data-ui="fluent"]) .ambient { display: none; }
+:root[data-ui="material"] body { font-family: Roboto, "Noto Sans", system-ui, sans-serif; }
+:root[data-ui="fluent"] body { font-family: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif; }
+:root:is([data-ui="material"], [data-ui="fluent"]) .glass { background: var(--button-bg); border: 1px solid var(--glass-border); box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+:root:is([data-ui="material"], [data-ui="fluent"]) .glass::after { display: none; }
+:root:is([data-ui="material"], [data-ui="fluent"]) .game-card { background: rgb(var(--surface-rgb)); border-color: var(--glass-border); border-radius: var(--platform-radius); box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+:root:is([data-ui="material"], [data-ui="fluent"]) .board { border-radius: var(--platform-radius); box-shadow: none; }
+:root:is([data-ui="material"], [data-ui="fluent"]) :is(.board-cell, .tile-face) { border-radius: var(--tile-radius); box-shadow: none; }
+:root:is([data-ui="material"], [data-ui="fluent"]) .tile-face { background: var(--tile-bg, #e8def8); color: var(--tile-ink, #342651); border: 1px solid var(--cell-border); text-shadow: none; font-weight: 600; letter-spacing: -.5px; }
+:root:is([data-ui="material"], [data-ui="fluent"]) :is(.toolbar-group, .icon-button, .undo-button, .new-game-button, .primary-button, .secondary-button, .platform-setting select, .toast) { border-radius: var(--control-radius); }
+:root:is([data-ui="material"], [data-ui="fluent"]) :is(.new-game-button, .primary-button) { background: var(--platform-primary); color: var(--on-primary); border-color: transparent; box-shadow: none; }
+:root:is([data-ui="material"], [data-ui="fluent"]) .new-game-button .icon { color: inherit; }
+:root:is([data-ui="material"], [data-ui="fluent"]) :is(.new-game-button, .primary-button):hover { filter: brightness(.94); }
+:root:is([data-ui="material"], [data-ui="fluent"]) :is(.modal, .settings-header) { background: rgb(var(--surface-rgb)); }
+:root:is([data-ui="material"], [data-ui="fluent"]) .modal { border: 1px solid var(--glass-border); border-radius: var(--platform-radius); box-shadow: 0 16px 48px #0003; }
+:root:is([data-ui="material"], [data-ui="fluent"]) .modal h2 { font-weight: 600; letter-spacing: -.4px; }
+:root:is([data-ui="material"], [data-ui="fluent"]) .modal::backdrop { background: #0006; -webkit-backdrop-filter: none; backdrop-filter: none; }
+:root:is([data-ui="material"], [data-ui="fluent"]) .game-overlay { background: rgb(var(--surface-rgb) / .96); border-radius: var(--platform-radius); -webkit-backdrop-filter: none; backdrop-filter: none; }
+:root:is([data-ui="material"], [data-ui="fluent"]) .segmented-control { background: var(--board-bg); border: 1px solid var(--rule); border-radius: var(--control-radius); }
+:root:is([data-ui="material"], [data-ui="fluent"]) .segmented-control span { border-radius: var(--control-radius); }
+:root:is([data-ui="material"], [data-ui="fluent"]) .segmented-control input:checked + span { background: var(--button-bg); color: var(--ink); box-shadow: none; }
+:root:is([data-ui="material"], [data-ui="fluent"]) .setting-row input:checked { background: var(--accent); }
+:root:is([data-ui="material"], [data-ui="fluent"]) .setting-row input:checked::before { background: var(--on-primary); }
+:root[data-ui="material"] .segmented-control input:checked + span { background: var(--button-bg); }
+:root[data-ui="material"] .brand img { border-radius: 12px; box-shadow: none; }
+:root[data-ui="material"] .score-value { color: var(--accent); font-weight: 500; }
+:root[data-ui="material"] .new-game-compact { background: var(--button-bg); border-radius: 16px; color: var(--ink); }
+:root[data-ui="fluent"] .brand img { border-radius: 6px; box-shadow: none; }
+:root[data-ui="fluent"] .icon { stroke-width: 1.4; }
+:root[data-ui="fluent"] .toolbar-group { gap: 2px; }
+:root[data-ui="fluent"] .glass { box-shadow: 0 1px 0 #00000012; }
+:root[data-ui="fluent"] .game-card { box-shadow: 0 2px 5px #00000008; }
+:root[data-ui="fluent"] .settings-sheet { background: rgb(var(--surface-rgb) / .94); -webkit-backdrop-filter: blur(30px); backdrop-filter: blur(30px); }
+:root[data-ui="fluent"][data-reduce-transparency="true"] .settings-sheet { background: rgb(var(--surface-rgb)); -webkit-backdrop-filter: none; backdrop-filter: none; }
+:root[data-ui="fluent"] .tile { --tile-bg: #e0effa; --tile-ink: #003c68; }
+
+/* Opaque tile colors keep every number readable in either color scheme. */
+:root:is([data-ui="material"], [data-ui="fluent"]) .tile[data-value="4"] { --tile-bg: #d5dcf8; --tile-ink: #2e3a68; }
+:root:is([data-ui="material"], [data-ui="fluent"]) .tile[data-value="8"] { --tile-bg: #fae0bf; --tile-ink: #714712; }
+:root:is([data-ui="material"], [data-ui="fluent"]) .tile[data-value="16"] { --tile-bg: #facdbc; --tile-ink: #793d27; }
+:root:is([data-ui="material"], [data-ui="fluent"]) .tile[data-value="32"] { --tile-bg: #f6b6bc; --tile-ink: #772b38; }
+:root:is([data-ui="material"], [data-ui="fluent"]) .tile[data-value="64"] { --tile-bg: #93424d; --tile-ink: #fff; }
+:root:is([data-ui="material"], [data-ui="fluent"]) .tile[data-value="128"] { --tile-bg: #c5e8d4; --tile-ink: #23583b; }
+:root:is([data-ui="material"], [data-ui="fluent"]) .tile[data-value="256"] { --tile-bg: #8bccbd; --tile-ink: #164e43; }
+:root:is([data-ui="material"], [data-ui="fluent"]) .tile[data-value="512"] { --tile-bg: #afc9f5; --tile-ink: #203f75; }
+:root:is([data-ui="material"], [data-ui="fluent"]) .tile[data-value="1024"] { --tile-bg: #bda4ec; --tile-ink: #35205d; }
+:root:is([data-ui="material"], [data-ui="fluent"]) .tile[data-value="2048"] { --tile-bg: #f3d27c; --tile-ink: #654700; }
+:root:is([data-ui="material"], [data-ui="fluent"]) .tile[data-super="true"] { --tile-bg: #6750a4; --tile-ink: #fff; }
+
+@media (prefers-contrast: more) {
+  :root:is([data-ui="material"], [data-ui="fluent"]) :is(.glass, .game-card, .board-cell, .platform-setting select) { border-color: var(--muted); }
+}
+@supports not (backdrop-filter: blur(1px)) {
+  :root[data-ui="fluent"] .settings-sheet { background: rgb(var(--surface-rgb)); }
+}
