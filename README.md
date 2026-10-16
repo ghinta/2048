@@ -11,6 +11,8 @@ dependencies. An optional Tauri 2 host packages the same game as a desktop app.
 | Desktop installers | [GitHub Releases](https://github.com/ghinta/2048/releases) |
 | Development installers | [Desktop CI builds](https://github.com/ghinta/2048/actions/workflows/desktop.yml) → successful run → Artifacts |
 
+Release history: [CHANGELOG.md](CHANGELOG.md).
+
 ## Web / PWA on GitHub Pages
 
 The PWA stays hosted at **https://ghinta.github.io/2048/**. It runs directly in

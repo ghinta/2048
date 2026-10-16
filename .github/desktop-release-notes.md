@@ -1,5 +1,8 @@
 2048 for Windows, Linux and macOS, with automatic platform UI.
 
+Changes for each version are documented in the
+[changelog](https://github.com/ghinta/2048/blob/main/CHANGELOG.md).
+
 **Web / PWA:** [Play or install from GitHub Pages](https://ghinta.github.io/2048/).
 The PWA remains independent of these desktop installers.
 
