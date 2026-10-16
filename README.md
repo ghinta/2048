@@ -77,8 +77,14 @@ npm run build
 python3 -m http.server 4173 --directory dist
 ```
 
-PNG icons are checked in. Regenerate them from `assets/icon.svg` with
-`npm run icons` (requires Playwright's Chromium, or `CHROMIUM_PATH`).
+PNG icons are checked in. Regenerate them from the opaque master
+`assets/icon-source.png` with `npm run icons` (requires Playwright's Chromium,
+or `CHROMIUM_PATH`). The master is excluded from exported builds.
+
+The artwork shows four tiles spelling 2048. Apple and Android receive explicit
+PNG icons at their required sizes; the build versions icon and manifest URLs.
+Existing home-screen shortcuts can retain their old icon. After an update, remove
+the old shortcut and add the page again; there is no need to clear browser storage.
 
 ## Adaptive platform UI
 

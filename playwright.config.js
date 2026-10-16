@@ -20,7 +20,7 @@ export default defineConfig({
     ...(engines.includes("chrome") ? [{ name: "chrome", use: { browserName: "chromium", channel: "chrome", launchOptions: process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {} } }] : []),
     ...(engines.includes("msedge") ? [{ name: "msedge", use: { browserName: "chromium", channel: "msedge", launchOptions: process.env.EDGE_PATH ? { executablePath: process.env.EDGE_PATH } : {} } }] : []),
     // Platform tests use engine-independent APIs; touch/CDP game tests stay on Chromium.
-    ...(engines.includes("webkit") ? [{ name: "webkit", testMatch: /(?:platform|install)\.spec\.js/, use: { browserName: "webkit" } }] : []),
+    ...(engines.includes("webkit") ? [{ name: "webkit", testMatch: /(?:platform|install|icons)\.spec\.js/, use: { browserName: "webkit" } }] : []),
   ],
   webServer: process.env.PLAYWRIGHT_BASE_URL ? undefined : {
     command: "python3 scripts/serve-tests.py",
