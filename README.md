@@ -44,6 +44,16 @@ If you do not use nvm, install the Node.js version in `.nvmrc` directly.
 The development server listens on port **4173**. There is no build step needed
 to play or edit the game. Changes to HTML, CSS and modules appear after a refresh.
 
+## Home-screen icon
+
+Apple touch icons (180 px), Android icons (192/512 px), a maskable icon and the
+favicon use the same four-number 2048 artwork. `assets/icon-source.png` is the
+opaque master; run `npm run icons` with Playwright Chromium (or `CHROMIUM_PATH`)
+to regenerate the PNG exports. The master is excluded from the published build.
+Icon and manifest URLs are versioned by content so browsers fetch updated images.
+Previously saved home-screen shortcuts may keep the OS-cached icon; remove the
+shortcut and add it again after reloading the updated page.
+
 ## Adaptive platform UI
 
 All three styles use the same markup, game logic, storage, keyboard controls and
