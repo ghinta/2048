@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import "../src/platform.js";
-const { detectPlatform, resolveUIStyle, readPreferences } = globalThis.PlatformUI;
+const { detectPlatform, resolveUIStyle, readPreferences, readRuntime } = globalThis.PlatformUI;
 
 const cases = [
   ["Chrome on Android", { userAgent: "Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 Chrome/134.0.0.0 Mobile Safari/537.36" }, "Chrome", "Android", "material"],
@@ -27,6 +27,39 @@ const cases = [
 
 for (const [name, input, browser, os, style] of cases) {
   test(`platform detection: ${name}`, () => assert.deepEqual(detectPlatform(input), { browser, os, style }));
+}
+
+test("Tauri markers work without the optional global API or OS plugin", () => {
+  for (const environment of [{ isTauri: true }, { __TAURI_INTERNALS__: {} }, { __TAURI_IPC__: () => {} }]) {
+    assert.equal(readRuntime(environment).isTauri, true);
+  }
+  for (const environment of [{}, { isTauri: false }, { isTauri: () => true }, { __TAURI__: {} }, { __TAURI_OS_PLUGIN_INTERNALS__: { platform: "linux" } }]) {
+    assert.equal(readRuntime(environment).isTauri, false);
+  }
+});
+
+for (const [platform, os, style] of [["windows", "Windows", "fluent"], ["linux", "Linux", "material"], ["macos", "macOS", "liquid"], ["ios", "iOS", "liquid"], ["android", "Android", "material"]]) {
+  test(`Tauri OS plugin: ${platform} overrides conflicting browser and OS hints`, () => {
+    const runtime = readRuntime({ __TAURI_INTERNALS__: {}, __TAURI_OS_PLUGIN_INTERNALS__: { platform } });
+    const input = { userAgent: "Mozilla/5.0 (Windows NT 10.0) Chrome/134.0 Safari/537.36 Edg/134.0", platform: "Win32" };
+    assert.deepEqual(detectPlatform(input, runtime), { browser: "Tauri", os, style });
+    // The OS plugin's data alone must never turn an ordinary browser into Tauri.
+    assert.deepEqual(detectPlatform(input, { ...runtime, isTauri: false }), { browser: "Edge", os: "Windows", style: "fluent" });
+  });
+}
+
+for (const [name, input, os, style] of [
+  ["Windows WebView2 without Edge tokens", { userAgent: "Mozilla/5.0 (Windows NT 10.0) Chrome/134.0 Safari/537.36", platform: "Win32" }, "Windows", "fluent"],
+  ["Linux WebKitGTK", { userAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/605.1.15", platform: "Linux x86_64" }, "Linux", "material"],
+  ["macOS with Chrome tokens", { userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/134.0 Safari/537.36", platform: "MacIntel" }, "macOS", "liquid"],
+  ["iPad desktop mode", { userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15) Version/18.0 Safari/605.1.15", platform: "MacIntel", maxTouchPoints: 5 }, "iPadOS", "liquid"],
+  ["Android WebView", { userAgent: "Mozilla/5.0 (Linux; Android 15; wv) Chrome/134.0 Mobile Safari/537.36" }, "Android", "material"],
+]) {
+  test(`Tauri without OS plugin: ${name}`, () => {
+    for (const platform of [undefined, "unsupported", "constructor"]) {
+      assert.deepEqual(detectPlatform(input, { isTauri: true, platform }), { browser: "Tauri", os, style });
+    }
+  });
 }
 
 test("manual styles override detection; auto and invalid values use detection", () => {

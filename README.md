@@ -70,7 +70,7 @@ through the frozen `PlatformUI` API. The initial appearance therefore works even
 when the game module is slow to load. Blocked storage still follows the system's
 color scheme. The browser toolbar color follows the active style and color scheme.
 
-Automatic selection gives the browser family priority:
+In a browser, automatic selection gives the browser family priority:
 
 | Browser | UI style |
 | --- | --- |
@@ -78,6 +78,25 @@ Automatic selection gives the browser family priority:
 | Chrome (including macOS and iOS) | Material 3 |
 | Safari | Liquid Glass |
 | Other / unknown | Android → Material; Windows → Fluent; otherwise Liquid Glass |
+
+Inside Tauri, automatic selection follows the operating system instead of the
+embedded webview's browser tokens:
+
+| Tauri host | UI style |
+| --- | --- |
+| Windows | Fluent |
+| Linux / Android | Material 3 |
+| macOS / iOS / iPadOS | Liquid Glass |
+
+The bootstrap detects Tauri's injected runtime markers, including configurations
+without `app.withGlobalTauri`. If the host registers `tauri-plugin-os`, its injected
+platform value takes priority; otherwise navigator platform and user-agent hints
+provide the OS fallback. Selection is synchronous before the first render and
+requires no IPC call or additional frontend dependency. Manual style preferences
+still take priority. Unknown native platforms fall back to Liquid Glass.
+This repository contains the web frontend, not a Tauri Rust host or native build
+configuration. Native runtime signals are simulated in browser tests; packaged
+Tauri applications still require validation in their host project.
 
 Edge is checked before Chrome because its user agent also contains Chrome.
 Low-entropy `navigator.userAgentData` is used when available, with user-agent
